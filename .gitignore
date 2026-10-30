@@ -1,0 +1,4 @@
+data/base/
+research/samples/NYT/*.json
+__pycache__/
+.venv/

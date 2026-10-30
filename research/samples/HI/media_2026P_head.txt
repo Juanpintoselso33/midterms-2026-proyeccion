@@ -1,0 +1,190 @@
+Column1	Column2	Column3	Column4	Column5	Column6	Column7	Column8	Column9	Column10	Column11	Column12	Column13	Column14	Column15	Column16
+#FormatVersion 1															
+"#""Precinct_Name"""	Split_Name	precinct_splitId	Reg_voters	Ballots	Reporting	Contest_id	Contest_title	Contest_party	Choice_id	Candidate_name	Choice_party	Candidate_Type	Mail votes	In-Person votes	
+01-01		1	6532	2370	1	336	"U.S. Representative, Dist II"	N	2	"CODELIA, Edward A."		C	25	0	
+01-01		1	6532	2370	1	336	"U.S. Representative, Dist II"	N	1	"TERRY, Randall"		C	12	0	
+01-01		1	6532	2370	1	269	"U.S. Representative, Dist II"	R	1	"AWA, Brenton"		C	322	0	
+01-01		1	6532	2370	1	70	"U.S. Representative, Dist II"	D	3	"BASIN, Kirill"		C	27	0	
+01-01		1	6532	2370	1	70	"U.S. Representative, Dist II"	D	5	"GUITHUES, Greg"		C	65	0	
+01-01		1	6532	2370	1	70	"U.S. Representative, Dist II"	D	2	"KING, Steven"		C	81	0	
+01-01		1	6532	2370	1	70	"U.S. Representative, Dist II"	D	4	"TOKUDA, Jill N."		C	1624	0	
+01-01		1	6532	2370	1	543	Governor	N	2	"GIUFFRE, John M. (Raghu)"		C	6	0	
+01-01		1	6532	2370	1	543	Governor	N	4	"HILL, Bu Laia"		C	16	0	
+01-01		1	6532	2370	1	543	Governor	N	3	"LEWMAN, Clyde McClain (Mac)"		C	7	0	
+01-01		1	6532	2370	1	543	Governor	N	1	"WILLIAMSON, Calvert A."		C	10	0	
+01-01		1	6532	2370	1	490	Governor	R	2	"CORDERY, Gary"		C	263	0	
+01-01		1	6532	2370	1	490	Governor	R	3	"FUJIYAMA, Ken"		C	80	0	
+01-01		1	6532	2370	1	377	Governor	D	3	"BOURGOIN, Duke"		C	42	0	
+01-01		1	6532	2370	1	377	Governor	D	1	"GREEN, Josh"		C	1645	0	
+01-01		1	6532	2370	1	377	Governor	D	4	"LUCAS-TADEO, George (Teva)"		C	92	0	
+01-01		1	6532	2370	1	377	Governor	D	2	"SHIM, Lauren Kapoliahi'iaka"		C	76	0	
+01-01		1	6532	2370	1	591	Lieutenant Governor	N	1	"KAMAU, Kilakila"		C	27	0	
+01-01		1	6532	2370	1	581	Lieutenant Governor	R	4	"ANTHONY, Daniel"		C	141	0	
+01-01		1	6532	2370	1	581	Lieutenant Governor	R	1	"CRESENCIA, Hopelin (Hope)"		C	48	0	
+01-01		1	6532	2370	1	581	Lieutenant Governor	R	3	"MEJIA, Margaret Rose"		C	69	0	
+01-01		1	6532	2370	1	581	Lieutenant Governor	R	2	"PETERS, Robert E."		C	68	0	
+01-01		1	6532	2370	1	415	Lieutenant Governor	D	6	"BELATTI, Della Au"		C	456	0	
+01-01		1	6532	2370	1	415	Lieutenant Governor	D	4	"CHOI, John"		C	136	0	
+01-01		1	6532	2370	1	415	Lieutenant Governor	D	3	"CUADRA, Ku L. (Bobby)"		C	15	0	
+01-01		1	6532	2370	1	415	Lieutenant Governor	D	2	"KAWAKAMI, Derek S.K."		C	1203	0	
+01-01		1	6532	2370	1	415	Lieutenant Governor	D	5	"PULETASI, Sam"		C	19	0	
+01-01		1	6532	2370	1	231	"State Representative, Dist 1"	D	1	"KUSCH, Matthias"		C	1402	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	7	"AKINA, Adrian (Kealii)"		C	326	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	6	"ANDERSON, Ikaika"		C	445	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	4	"BAKER, Karl Veto"		C	164	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	14	"BILLIONAIRE, Shelby Pikachu"		C	82	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	12	"BURKE, Jackie Kahookele"		C	121	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	16	"COSTELLO, Michelle (Mikala)"		C	204	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	2	"CRABBE, Kanekoa (Koa)"		C	257	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	9	"GALUTERIA, Brickwood M."		C	595	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	5	"KAUAULA, Clifford K."		C	79	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	13	"LEE, Brendon Kalei'aina"		C	237	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	11	"MARTIN, Philip (Kawika)"		C	76	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	1	"NIHIPALI, R. Kunani, Sr."		C	179	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	10	"PARISH, Kalena A."		C	336	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	8	"SOUZA, Keoni"		C	575	0	
+01-01		1	6532	2370	1	115	At-Large Trustee	NON	15	"WAIHEE, John, IV"		C	606	0	
+01-01		1	6532	2370	1	152	"Councilmember, Dist 1"	NON	1	"DEL ROSARIO, Ren"		C	804	0	
+01-01		1	6532	2370	1	152	"Councilmember, Dist 1"	NON	2	"KIMBALL, Heather L."		C	1354	0	
+01-01		1	6532	2370	1	152	"Councilmember, Dist 1"	NON	3	"PENN, BJ"		C	93	0	
+01-02		2	4487	1478	1	336	"U.S. Representative, Dist II"	N	2	"CODELIA, Edward A."		C	14	0	
+01-02		2	4487	1478	1	336	"U.S. Representative, Dist II"	N	1	"TERRY, Randall"		C	5	0	
+01-02		2	4487	1478	1	269	"U.S. Representative, Dist II"	R	1	"AWA, Brenton"		C	183	0	
+01-02		2	4487	1478	1	70	"U.S. Representative, Dist II"	D	3	"BASIN, Kirill"		C	19	0	
+01-02		2	4487	1478	1	70	"U.S. Representative, Dist II"	D	5	"GUITHUES, Greg"		C	27	0	
+01-02		2	4487	1478	1	70	"U.S. Representative, Dist II"	D	2	"KING, Steven"		C	28	0	
+01-02		2	4487	1478	1	70	"U.S. Representative, Dist II"	D	4	"TOKUDA, Jill N."		C	1087	0	
+01-02		2	4487	1478	1	543	Governor	N	2	"GIUFFRE, John M. (Raghu)"		C	4	0	
+01-02		2	4487	1478	1	543	Governor	N	4	"HILL, Bu Laia"		C	3	0	
+01-02		2	4487	1478	1	543	Governor	N	3	"LEWMAN, Clyde McClain (Mac)"		C	5	0	
+01-02		2	4487	1478	1	543	Governor	N	1	"WILLIAMSON, Calvert A."		C	5	0	
+01-02		2	4487	1478	1	490	Governor	R	2	"CORDERY, Gary"		C	112	0	
+01-02		2	4487	1478	1	490	Governor	R	3	"FUJIYAMA, Ken"		C	82	0	
+01-02		2	4487	1478	1	377	Governor	D	3	"BOURGOIN, Duke"		C	14	0	
+01-02		2	4487	1478	1	377	Governor	D	1	"GREEN, Josh"		C	1053	0	
+01-02		2	4487	1478	1	377	Governor	D	4	"LUCAS-TADEO, George (Teva)"		C	33	0	
+01-02		2	4487	1478	1	377	Governor	D	2	"SHIM, Lauren Kapoliahi'iaka"		C	68	0	
+01-02		2	4487	1478	1	591	Lieutenant Governor	N	1	"KAMAU, Kilakila"		C	15	0	
+01-02		2	4487	1478	1	581	Lieutenant Governor	R	4	"ANTHONY, Daniel"		C	80	0	
+01-02		2	4487	1478	1	581	Lieutenant Governor	R	1	"CRESENCIA, Hopelin (Hope)"		C	28	0	
+01-02		2	4487	1478	1	581	Lieutenant Governor	R	3	"MEJIA, Margaret Rose"		C	46	0	
+01-02		2	4487	1478	1	581	Lieutenant Governor	R	2	"PETERS, Robert E."		C	24	0	
+01-02		2	4487	1478	1	415	Lieutenant Governor	D	6	"BELATTI, Della Au"		C	297	0	
+01-02		2	4487	1478	1	415	Lieutenant Governor	D	4	"CHOI, John"		C	60	0	
+01-02		2	4487	1478	1	415	Lieutenant Governor	D	3	"CUADRA, Ku L. (Bobby)"		C	10	0	
+01-02		2	4487	1478	1	415	Lieutenant Governor	D	2	"KAWAKAMI, Derek S.K."		C	783	0	
+01-02		2	4487	1478	1	415	Lieutenant Governor	D	5	"PULETASI, Sam"		C	8	0	
+01-02		2	4487	1478	1	231	"State Representative, Dist 1"	D	1	"KUSCH, Matthias"		C	862	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	7	"AKINA, Adrian (Kealii)"		C	217	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	6	"ANDERSON, Ikaika"		C	234	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	4	"BAKER, Karl Veto"		C	122	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	14	"BILLIONAIRE, Shelby Pikachu"		C	63	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	12	"BURKE, Jackie Kahookele"		C	78	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	16	"COSTELLO, Michelle (Mikala)"		C	113	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	2	"CRABBE, Kanekoa (Koa)"		C	151	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	9	"GALUTERIA, Brickwood M."		C	348	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	5	"KAUAULA, Clifford K."		C	47	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	13	"LEE, Brendon Kalei'aina"		C	104	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	11	"MARTIN, Philip (Kawika)"		C	40	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	1	"NIHIPALI, R. Kunani, Sr."		C	139	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	10	"PARISH, Kalena A."		C	128	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	8	"SOUZA, Keoni"		C	306	0	
+01-02		2	4487	1478	1	115	At-Large Trustee	NON	15	"WAIHEE, John, IV"		C	408	0	
+01-02		2	4487	1478	1	152	"Councilmember, Dist 1"	NON	1	"DEL ROSARIO, Ren"		C	455	0	
+01-02		2	4487	1478	1	152	"Councilmember, Dist 1"	NON	2	"KIMBALL, Heather L."		C	844	0	
+01-02		2	4487	1478	1	152	"Councilmember, Dist 1"	NON	3	"PENN, BJ"		C	92	0	
+01-03		3	5743	2327	1	336	"U.S. Representative, Dist II"	N	2	"CODELIA, Edward A."		C	14	0	
+01-03		3	5743	2327	1	336	"U.S. Representative, Dist II"	N	1	"TERRY, Randall"		C	9	0	
+01-03		3	5743	2327	1	269	"U.S. Representative, Dist II"	R	1	"AWA, Brenton"		C	264	0	
+01-03		3	5743	2327	1	70	"U.S. Representative, Dist II"	D	3	"BASIN, Kirill"		C	21	0	
+01-03		3	5743	2327	1	70	"U.S. Representative, Dist II"	D	5	"GUITHUES, Greg"		C	37	0	
+01-03		3	5743	2327	1	70	"U.S. Representative, Dist II"	D	2	"KING, Steven"		C	52	0	
+01-03		3	5743	2327	1	70	"U.S. Representative, Dist II"	D	4	"TOKUDA, Jill N."		C	1743	0	
+01-03		3	5743	2327	1	543	Governor	N	2	"GIUFFRE, John M. (Raghu)"		C	7	0	
+01-03		3	5743	2327	1	543	Governor	N	4	"HILL, Bu Laia"		C	12	0	
+01-03		3	5743	2327	1	543	Governor	N	3	"LEWMAN, Clyde McClain (Mac)"		C	4	0	
+01-03		3	5743	2327	1	543	Governor	N	1	"WILLIAMSON, Calvert A."		C	2	0	
+01-03		3	5743	2327	1	490	Governor	R	2	"CORDERY, Gary"		C	181	0	
+01-03		3	5743	2327	1	490	Governor	R	3	"FUJIYAMA, Ken"		C	92	0	
+01-03		3	5743	2327	1	377	Governor	D	3	"BOURGOIN, Duke"		C	14	0	
+01-03		3	5743	2327	1	377	Governor	D	1	"GREEN, Josh"		C	1729	0	
+01-03		3	5743	2327	1	377	Governor	D	4	"LUCAS-TADEO, George (Teva)"		C	63	0	
+01-03		3	5743	2327	1	377	Governor	D	2	"SHIM, Lauren Kapoliahi'iaka"		C	77	0	
+01-03		3	5743	2327	1	591	Lieutenant Governor	N	1	"KAMAU, Kilakila"		C	17	0	
+01-03		3	5743	2327	1	581	Lieutenant Governor	R	4	"ANTHONY, Daniel"		C	99	0	
+01-03		3	5743	2327	1	581	Lieutenant Governor	R	1	"CRESENCIA, Hopelin (Hope)"		C	47	0	
+01-03		3	5743	2327	1	581	Lieutenant Governor	R	3	"MEJIA, Margaret Rose"		C	68	0	
+01-03		3	5743	2327	1	581	Lieutenant Governor	R	2	"PETERS, Robert E."		C	29	0	
+01-03		3	5743	2327	1	415	Lieutenant Governor	D	6	"BELATTI, Della Au"		C	461	0	
+01-03		3	5743	2327	1	415	Lieutenant Governor	D	4	"CHOI, John"		C	100	0	
+01-03		3	5743	2327	1	415	Lieutenant Governor	D	3	"CUADRA, Ku L. (Bobby)"		C	8	0	
+01-03		3	5743	2327	1	415	Lieutenant Governor	D	2	"KAWAKAMI, Derek S.K."		C	1323	0	
+01-03		3	5743	2327	1	415	Lieutenant Governor	D	5	"PULETASI, Sam"		C	16	0	
+01-03		3	5743	2327	1	231	"State Representative, Dist 1"	D	1	"KUSCH, Matthias"		C	1453	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	7	"AKINA, Adrian (Kealii)"		C	405	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	6	"ANDERSON, Ikaika"		C	383	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	4	"BAKER, Karl Veto"		C	207	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	14	"BILLIONAIRE, Shelby Pikachu"		C	73	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	12	"BURKE, Jackie Kahookele"		C	99	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	16	"COSTELLO, Michelle (Mikala)"		C	154	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	2	"CRABBE, Kanekoa (Koa)"		C	247	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	9	"GALUTERIA, Brickwood M."		C	603	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	5	"KAUAULA, Clifford K."		C	65	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	13	"LEE, Brendon Kalei'aina"		C	173	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	11	"MARTIN, Philip (Kawika)"		C	40	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	1	"NIHIPALI, R. Kunani, Sr."		C	140	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	10	"PARISH, Kalena A."		C	244	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	8	"SOUZA, Keoni"		C	439	0	
+01-03		3	5743	2327	1	115	At-Large Trustee	NON	15	"WAIHEE, John, IV"		C	643	0	
+01-03		3	5743	2327	1	117	"Councilmember, Dist 2"	NON	2	"BAUTISTA, Blaine Kenji"		C	230	0	
+01-03		3	5743	2327	1	117	"Councilmember, Dist 2"	NON	1	"BOTELHO, Wendy S."		C	465	0	
+01-03		3	5743	2327	1	117	"Councilmember, Dist 2"	NON	5	"FUKUSHIMA, JoNelle (Jo)"		C	347	0	
+01-03		3	5743	2327	1	117	"Councilmember, Dist 2"	NON	4	"HALVERSEN, William John"		C	35	0	
+01-03		3	5743	2327	1	117	"Councilmember, Dist 2"	NON	3	"KAGIWADA, Jennifer (Jenn)"		C	1078	0	
+01-04		4	0	0	1	336	"U.S. Representative, Dist II"	N	2	"CODELIA, Edward A."		C	0	0	
+01-04		4	0	0	1	336	"U.S. Representative, Dist II"	N	1	"TERRY, Randall"		C	0	0	
+01-04		4	0	0	1	269	"U.S. Representative, Dist II"	R	1	"AWA, Brenton"		C	0	0	
+01-04		4	0	0	1	70	"U.S. Representative, Dist II"	D	3	"BASIN, Kirill"		C	0	0	
+01-04		4	0	0	1	70	"U.S. Representative, Dist II"	D	5	"GUITHUES, Greg"		C	0	0	
+01-04		4	0	0	1	70	"U.S. Representative, Dist II"	D	2	"KING, Steven"		C	0	0	
+01-04		4	0	0	1	70	"U.S. Representative, Dist II"	D	4	"TOKUDA, Jill N."		C	0	0	
+01-04		4	0	0	1	543	Governor	N	2	"GIUFFRE, John M. (Raghu)"		C	0	0	
+01-04		4	0	0	1	543	Governor	N	4	"HILL, Bu Laia"		C	0	0	
+01-04		4	0	0	1	543	Governor	N	3	"LEWMAN, Clyde McClain (Mac)"		C	0	0	
+01-04		4	0	0	1	543	Governor	N	1	"WILLIAMSON, Calvert A."		C	0	0	
+01-04		4	0	0	1	490	Governor	R	2	"CORDERY, Gary"		C	0	0	
+01-04		4	0	0	1	490	Governor	R	3	"FUJIYAMA, Ken"		C	0	0	
+01-04		4	0	0	1	377	Governor	D	3	"BOURGOIN, Duke"		C	0	0	
+01-04		4	0	0	1	377	Governor	D	1	"GREEN, Josh"		C	0	0	
+01-04		4	0	0	1	377	Governor	D	4	"LUCAS-TADEO, George (Teva)"		C	0	0	
+01-04		4	0	0	1	377	Governor	D	2	"SHIM, Lauren Kapoliahi'iaka"		C	0	0	
+01-04		4	0	0	1	591	Lieutenant Governor	N	1	"KAMAU, Kilakila"		C	0	0	
+01-04		4	0	0	1	581	Lieutenant Governor	R	4	"ANTHONY, Daniel"		C	0	0	
+01-04		4	0	0	1	581	Lieutenant Governor	R	1	"CRESENCIA, Hopelin (Hope)"		C	0	0	
+01-04		4	0	0	1	581	Lieutenant Governor	R	3	"MEJIA, Margaret Rose"		C	0	0	
+01-04		4	0	0	1	581	Lieutenant Governor	R	2	"PETERS, Robert E."		C	0	0	
+01-04		4	0	0	1	415	Lieutenant Governor	D	6	"BELATTI, Della Au"		C	0	0	
+01-04		4	0	0	1	415	Lieutenant Governor	D	4	"CHOI, John"		C	0	0	
+01-04		4	0	0	1	415	Lieutenant Governor	D	3	"CUADRA, Ku L. (Bobby)"		C	0	0	
+01-04		4	0	0	1	415	Lieutenant Governor	D	2	"KAWAKAMI, Derek S.K."		C	0	0	
+01-04		4	0	0	1	415	Lieutenant Governor	D	5	"PULETASI, Sam"		C	0	0	
+01-04		4	0	0	1	231	"State Representative, Dist 1"	D	1	"KUSCH, Matthias"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	7	"AKINA, Adrian (Kealii)"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	6	"ANDERSON, Ikaika"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	4	"BAKER, Karl Veto"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	14	"BILLIONAIRE, Shelby Pikachu"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	12	"BURKE, Jackie Kahookele"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	16	"COSTELLO, Michelle (Mikala)"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	2	"CRABBE, Kanekoa (Koa)"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	9	"GALUTERIA, Brickwood M."		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	5	"KAUAULA, Clifford K."		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	13	"LEE, Brendon Kalei'aina"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	11	"MARTIN, Philip (Kawika)"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	1	"NIHIPALI, R. Kunani, Sr."		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	10	"PARISH, Kalena A."		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	8	"SOUZA, Keoni"		C	0	0	
+01-04		4	0	0	1	115	At-Large Trustee	NON	15	"WAIHEE, John, IV"		C	0	0	
+01-04		4	0	0	1	117	"Councilmember, Dist 2"	NON	2	"BAUTISTA, Blaine Kenji"		C	0	0	
+01-04		4	0	0	1	117	"Councilmember, Dist 2"	NON	1	"BOTELHO, Wendy S."		C	0	0	
+01-04		4	0	0	1	117	"Councilmember, Dist 2"	NON	5	"FUKUSHIMA, JoNelle (Jo)"		C	0	0	
+01-04		

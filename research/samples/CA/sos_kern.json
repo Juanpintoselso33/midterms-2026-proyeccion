@@ -1,0 +1,44 @@
+[
+  {
+    "raceTitle": "Secretary of State - Kern County Results",
+    "Reporting": "0% (0 of 898) precincts reporting",
+    "ReportingTime": "October 30, 2026, 9:00 a.m.",
+    "candidates": [
+      {
+        "Name": "Shirley N. Weber",
+        "Party": "Dem",
+        "Votes": "0",
+        "Percent": "0.0",
+        "incumbent": true
+      },
+      {
+        "Name": "Donald P. (Don) Wagner",
+        "Party": "Rep",
+        "Votes": "0",
+        "Percent": "0.0",
+        "incumbent": false
+      }
+    ]
+  },
+  {
+    "raceTitle": "Secretary of State - Statewide Results",
+    "Reporting": "0% (0 of 23,860) precincts reporting",
+    "ReportingTime": "October 30, 2026, 9:00 a.m.",
+    "candidates": [
+      {
+        "Name": "Shirley N. Weber",
+        "Party": "Dem",
+        "Votes": "0",
+        "Percent": "0.0",
+        "incumbent": true
+      },
+      {
+        "Name": "Donald P. (Don) Wagner",
+        "Party": "Rep",
+        "Votes": "0",
+        "Percent": "0.0",
+        "incumbent": false
+      }
+    ]
+  }
+]
