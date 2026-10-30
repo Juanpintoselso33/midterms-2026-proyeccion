@@ -3,3 +3,4 @@ research/samples/NYT/*.json
 __pycache__/
 .venv/
 data/live/
+dash/shots/
