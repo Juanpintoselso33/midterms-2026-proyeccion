@@ -168,6 +168,7 @@ function renderAll() {
   if (SRC === 'sample') note = 'Datos de ensayo: conteo parcial de 2024 usado para probar el tablero.';
   else if (SRC === 'sample26') note = 'Datos de prueba: estructura real de 2026, todavía sin votos.';
   else if (SRC) note = 'Fuente alternativa: ' + SRC;
+  if (DATA && DATA.mode === 'ensayo') note = 'ENSAYO con la noche de 2024 reproducida a velocidad rápida — no son resultados de 2026. ' + (DATA.clock || '');
   $('#srcnote').textContent = note;
   renderChambers();
   renderEvo();
