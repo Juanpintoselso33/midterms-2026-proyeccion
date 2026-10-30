@@ -49,8 +49,8 @@ function isDark() {
 
 /* ---------- paleta divergente ---------- */
 var PAL = {
-  light: {neu:[236,232,224], d:[[170,194,240],[37,86,196]], r:[[240,180,170],[196,47,38]], seq:[[232,236,242],[40,52,78]], na:[201,197,187]},
-  dark:  {neu:[58,64,78],    d:[[82,116,200],[130,170,255]],  r:[[170,80,72],[255,123,109]],  seq:[[40,48,64],[170,190,230]], na:[59,65,80]}
+  light: {neu:[196,176,222], d:[[150,178,236],[37,86,196]], r:[[236,160,150],[196,47,38]], seq:[[232,236,242],[40,52,78]], na:[234,231,225]},
+  dark:  {neu:[120,98,158],  d:[[82,116,200],[130,170,255]],  r:[[170,80,72],[255,123,109]],  seq:[[40,48,64],[170,190,230]], na:[30,34,43]}
 };
 function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
 function rgb(c) { return 'rgb(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ')'; }
@@ -351,7 +351,7 @@ function evoConfig() {
 function renderEvo() {
   var cfg = evoConfig(), ch = CH.evo;
   var c = DATA.chambers && DATA.chambers[UI.evoCh];
-  $('#evoNote').textContent = (HIST.length ? HIST.length + ' corridas del modelo' : 'Todavía no hay historial: el gráfico se va a llenar con las próximas corridas') +
+  $('#evoNote').textContent = (HIST.length ? HIST.length + (HIST.length === 1 ? ' corrida del modelo' : ' corridas del modelo') : 'Todavía no hay historial: el gráfico se va a llenar con las próximas corridas') +
     (c ? ' · mayoría: D/Ind. ' + c.D_needs + ' bancas, R ' + c.R_needs + '.' : '.');
   if (ch && ch._sig === UI.evoCh + UI.evoMet) {
     ch.data = cfg.data; ch.options.scales = cfg.options.scales; ch.update('none'); return;
@@ -475,9 +475,9 @@ function colorFor(m, v) {
 }
 function legendHTML(m) {
   var M = METRICS[m];
-  if (M.kind === 'seq') return '<span>0 %</span><div class="gr" style="background:' + gradient('seq') + '"></div><span>100 % contado</span><span class="na"><i></i>sin dato</span>';
+  if (M.kind === 'seq') return '<span>0 %</span><div class="gr" style="background:' + gradient('seq') + '"></div><span>100 % contado</span><span class="na"><i style="background:' + naColor() + '"></i>sin dato</span>';
   var lo = 50 - M.span, hi = 50 + M.span;
-  return '<span class="r"><b>' + lo + (m === 'prob' ? ' %' : ' %') + '</b> R</span><div class="gr" style="background:' + gradient('div') + '"></div><span class="d">D/Ind. <b>' + hi + ' %</b></span><span class="na"><i></i>sin dato / sin elección</span>';
+  return '<span class="r"><b>' + lo + (m === 'prob' ? ' %' : ' %') + '</b> R</span><div class="gr" style="background:' + gradient('div') + '"></div><span class="d">D/Ind. <b>' + hi + ' %</b></span><span class="na"><i style="background:' + naColor() + '"></i>sin dato / sin elección</span>';
 }
 function mkMap(el, interactive) {
   var m = L.map(el, {crs: L.CRS.Simple, zoomSnap: 0.25, zoomDelta: 0.5, attributionControl: false, minZoom: -8, maxZoom: 6,
@@ -697,9 +697,9 @@ function renderDetail(fit) {
 }
 function detailLegend() {
   var m = UI.dmode;
-  if (m === 'cnt') return '<span>0 %</span><div class="gr" style="background:' + gradient('seq') + '"></div><span>100 % contado</span><span class="na"><i></i>sin dato</span>';
-  if (m === 'swing') return '<span class="r"><b>−10</b> pts hacia R</span><div class="gr" style="background:' + gradient('div') + '"></div><span class="d">hacia D/Ind. <b>+10</b> pts</span><span class="na"><i></i>sin dato</span>';
-  return '<span class="r"><b>30 %</b> R</span><div class="gr" style="background:' + gradient('div') + '"></div><span class="d">D/Ind. <b>70 %</b></span><span class="na"><i></i>sin dato</span>';
+  if (m === 'cnt') return '<span>0 %</span><div class="gr" style="background:' + gradient('seq') + '"></div><span>100 % contado</span><span class="na"><i style="background:' + naColor() + '"></i>sin dato</span>';
+  if (m === 'swing') return '<span class="r"><b>−10</b> pts hacia R</span><div class="gr" style="background:' + gradient('div') + '"></div><span class="d">hacia D/Ind. <b>+10</b> pts</span><span class="na"><i style="background:' + naColor() + '"></i>sin dato</span>';
+  return '<span class="r"><b>30 %</b> R</span><div class="gr" style="background:' + gradient('div') + '"></div><span class="d">D/Ind. <b>70 %</b></span><span class="na"><i style="background:' + naColor() + '"></i>sin dato</span>';
 }
 function renderUnits(r, G) {
   var L_ = xn(r), R_ = yn(r);
