@@ -75,60 +75,99 @@ def save(outdir, slug, content, stamp):
 
 
 def party_of(meta):
-    p = (meta or {}).get("party") or {} if isinstance(meta, dict) else {}
-    return {"DEM": "D", "GOP": "R"}.get(p.get("nyt_id"), "O")
+    p = ((meta or {}).get("party") or {}) if isinstance(meta, dict) else {}
+    return {"DEM": "D", "GOP": "R"}.get(p.get("nyt_id"), "I")
+
+
+def caucus_of(meta):
+    """Bancada: la declarada por el feed (p. ej. King/Sanders votan con los demócratas)."""
+    c = (meta or {}).get("party_caucus") if isinstance(meta, dict) else None
+    c = c.get("nyt_id") if isinstance(c, dict) else c
+    return {"DEM": "D", "GOP": "R"}.get(c, party_of(meta))
+
+
+def main_pair(r):
+    """Los dos candidatos que se modelan: X = principal no republicano, Y = principal rival
+    (el republicano con más votos; si no hay republicano, el siguiente más votado).
+    Sin votos todavía: demócrata > incumbente > orden en la boleta."""
+    meta = r.get("candidate_metadata") or {}
+    top = r.get("top_reporting_unit") or (r.get("reporting_units") or [{}])[0]
+    votes = {c["nyt_id"]: (c.get("votes") or {}).get("total") or 0 for c in top.get("candidates", [])}
+    ids = list(meta) or list(votes)
+    rank = lambda i: (votes.get(i, 0), party_of(meta.get(i)) == "D", bool((meta.get(i) or {}).get("incumbent")),
+                      -((meta.get(i) or {}).get("ballot_order") or 99))
+    non_r = sorted([i for i in ids if party_of(meta.get(i)) != "R"], key=rank, reverse=True)
+    rep = sorted([i for i in ids if party_of(meta.get(i)) == "R"], key=rank, reverse=True)
+    if not non_r:  # sólo republicanos (R contra R)
+        x = rep[0] if rep else None
+        y = rep[1] if len(rep) > 1 else None
+    else:
+        x = non_r[0]
+        y = rep[0] if rep else (non_r[1] if len(non_r) > 1 else None)
+    return x, y, meta
+
+
+def race_rows(r):
+    x, y, meta = main_pair(r)
+    won = (r.get("outcome") or {}).get("won") or []
+    out = []
+    for u in r.get("reporting_units", []):
+        tv = {"X": {"total": 0, **{t: 0 for t in TYPES}}, "Y": {"total": 0, **{t: 0 for t in TYPES}},
+              "T": {t: 0 for t in TYPES}}
+        for c in u.get("candidates", []):
+            k = "X" if c["nyt_id"] == x else ("Y" if c["nyt_id"] == y else None)
+            for t, n in (c.get("votes") or {}).items():
+                if t in TYPES:
+                    tv["T"][t] += n or 0
+                if k and t in tv[k]:
+                    tv[k][t] += n or 0
+        ev = u.get("expected_vote_by_vote_type") or {}
+        ee = u.get("eevp_by_vote_type") or {}
+        hist = next(iter((u.get("historical_comparison_race_data") or {}).values()), {}) or {}
+        row = {
+            "race_id": r["nyt_id"], "office": r.get("office_id"), "state": u.get("state_postal"),
+            "seat": r.get("seat_number"), "rating": r.get("rating"), "call": r.get("race_call_status"),
+            "winner_ids": ",".join(won), "uncontested": r.get("uncontested"),
+            "tabulation": r.get("tabulation_method"), "win_threshold": r.get("win_threshold"),
+            "race_type": r.get("race_type_id"), "updated_at": r.get("updated_at"),
+            "x_id": x, "y_id": y,
+            "x_party": party_of(meta.get(x)) if x else "", "y_party": party_of(meta.get(y)) if y else "",
+            "x_caucus": caucus_of(meta.get(x)) if x else "", "y_caucus": caucus_of(meta.get(y)) if y else "",
+            "x_name": (meta.get(x) or {}).get("last_name", ""), "y_name": (meta.get(y) or {}).get("last_name", ""),
+            "unit_id": u["nyt_id"], "level": u.get("level"), "name": u.get("name"),
+            "fips": (u.get("fips_state") or "") + (u.get("fips_county") or ""),
+            "eevp": u.get("eevp"), "expected": u.get("total_expected_vote"), "total": u.get("total_votes"),
+            "prec_rep": u.get("precincts_reporting"), "prec_tot": u.get("precincts_total"),
+            "hist_dem": hist.get("pct_dem"), "hist_rep": hist.get("pct_rep"),
+            "X": tv["X"]["total"], "Y": tv["Y"]["total"],
+        }
+        for t in TYPES:
+            row[f"X_{t}"], row[f"Y_{t}"], row[f"T_{t}"] = tv["X"][t], tv["Y"][t], tv["T"][t]
+            row[f"exp_{t}"], row[f"eevp_{t}"] = ev.get(t), ee.get(t)
+        out.append(row)
+    return out
 
 
 def flatten(outdir):
-    """Una fila por (carrera, unidad de reporte) con votos D/R/otros y votos esperados."""
-    rows, seen = [], set()
-    files = sorted((outdir / "raw").glob("*.json"))
-    # Las páginas por estado primero: tienen condados; las generales sólo completan lo que falte.
-    files.sort(key=lambda p: p.stem in ("results-senate", "results-governor", "results-house"))
-    for f in files:
+    """Una fila por (carrera, unidad de reporte) con los dos candidatos principales.
+
+    Cada carrera aparece en el archivo general y en su página por estado. Se usa la fuente con
+    más votos contados en la unidad de arriba (los conteos sólo suben); a igualdad, la que trae
+    más detalle geográfico. Así una página estatal que dejó de actualizarse no tapa al general.
+    """
+    best = {}
+    for f in sorted((outdir / "raw").glob("*.json")):
         try:
             d = json.loads(f.read_bytes())
         except json.JSONDecodeError:
             continue
         for r in d.get("races", []):
-            meta = r.get("candidate_metadata") or {}
-            won = (r.get("outcome") or {}).get("won") or []
-            parties = "".join(sorted(party_of(m) for m in meta.values()))
-            for u in r.get("reporting_units", []):
-                key = (r["nyt_id"], u["nyt_id"])
-                if key in seen:
-                    continue
-                seen.add(key)
-                v = {p: {"total": 0, **{t: 0 for t in TYPES}} for p in "DRO"}
-                for c in u.get("candidates", []):
-                    p = party_of(meta.get(c["nyt_id"]))
-                    for k, n in (c.get("votes") or {}).items():
-                        if k in v[p]:
-                            v[p][k] += n or 0
-                ev = u.get("expected_vote_by_vote_type") or {}
-                ee = u.get("eevp_by_vote_type") or {}
-                hist = next(iter((u.get("historical_comparison_race_data") or {}).values()), {}) or {}
-                row = {
-                    "race_id": r["nyt_id"], "office": r.get("office_id"), "state": u.get("state_postal"),
-                    "seat": r.get("seat_number"), "rating": r.get("rating"),
-                    "call": r.get("race_call_status"), "winner": ",".join(party_of(meta.get(w)) for w in won),
-                    "uncontested": r.get("uncontested"), "tabulation": r.get("tabulation_method"),
-                    "parties": parties, "race_type": r.get("race_type_id"),
-                    "unit_id": u["nyt_id"], "level": u.get("level"), "name": u.get("name"),
-                    "fips": (u.get("fips_state") or "") + (u.get("fips_county") or ""),
-                    "eevp": u.get("eevp"), "expected": u.get("total_expected_vote"),
-                    "total": u.get("total_votes"),
-                    "prec_rep": u.get("precincts_reporting"), "prec_tot": u.get("precincts_total"),
-                    "hist_dem": hist.get("pct_dem"), "hist_rep": hist.get("pct_rep"),
-                }
-                for p in "DRO":
-                    row[p] = v[p]["total"]
-                    for t in TYPES:
-                        row[f"{p}_{t}"] = v[p][t]
-                for t in TYPES:
-                    row[f"exp_{t}"] = ev.get(t)
-                    row[f"eevp_{t}"] = ee.get(t)
-                rows.append(row)
+            top = r.get("top_reporting_unit") or (r.get("reporting_units") or [{}])[0]
+            score = (top.get("total_votes") or 0, len(r.get("winner_ids", []) or (r.get("outcome") or {}).get("won") or []),
+                     len(r.get("reporting_units") or []))
+            if r["nyt_id"] not in best or score > best[r["nyt_id"]][0]:
+                best[r["nyt_id"]] = (score, r)
+    rows = [row for _, r in best.values() for row in race_rows(r)]
     if rows:
         tmp = outdir / "units.tmp"
         with open(tmp, "w", newline="") as fh:

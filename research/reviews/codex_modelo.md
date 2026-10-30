@@ -1445,3 +1445,253 @@ ModuleNotFoundError: No module named 'tqdm'
 
 hook: PostToolUse
 hook: PostToolUse Completed
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+exec
+/bin/zsh -lc "rg --files /Users/juan/.cache/uv/archive-v0 | rg '/tqdm/__init__.py"'$'"' | head -4; nl -ba model/live.py" in /Users/juan/dev/midterms-2026-proyeccion
+ succeeded in 2108ms:
+/Users/juan/.cache/uv/archive-v0/bZpT0vvm7eKoJIB5/lib/python3.13/site-packages/tqdm/__init__.py
+/Users/juan/.cache/uv/archive-v0/kh_57iP-Yyyuflmz/lib/python3.13/site-packages/tqdm/__init__.py
+/Users/juan/.cache/uv/archive-v0/r01Cb6yvOw5PQ7zA/lib/python3.13/site-packages/tqdm/__init__.py
+/Users/juan/.cache/uv/archive-v0/nA9yI81h3pSb24Z2/lib/python3.13/site-packages/tqdm/__init__.py
+     1	"""Circuito de la noche: bajar → proyectar → publicar.
+     2	
+     3	Cada --every segundos baja los JSON del NYT y corre el modelo sobre dash/. Cada --push
+     4	segundos copia el tablero a la rama gh-pages (worktree en ../midterms-2026-pages) y pushea.
+     5	GitHub Pages admite ~10 publicaciones por hora: no bajar --push de 480.
+     6	
+     7	Uso: uv run --with requests --with tqdm --with numpy --with scipy --with pandas model/live.py
+     8	"""
+     9	import argparse, os, shutil, subprocess, sys, time
+    10	from pathlib import Path
+    11	
+    12	sys.path.insert(0, os.path.expanduser("~/.claude/tools"))
+    13	from claude_tqdm import tqdm  # noqa: E402
+    14	
+    15	sys.path.insert(0, str(Path(__file__).resolve().parent))
+    16	import fetch_nyt as F  # noqa: E402
+    17	import project as P  # noqa: E402
+    18	
+    19	ROOT = P.ROOT
+    20	PAGES = ROOT.parent / "midterms-2026-pages"
+    21	PUBLISH = ["index.html", "app.js", "style.css", "data.json", "units.json", "history.json", "lib", "geo"]
+    22	
+    23	
+    24	def publish(stamp):
+    25	    for name in PUBLISH:
+    26	        src = ROOT / "dash" / name
+    27	        if not src.exists():
+    28	            continue
+    29	        dst = PAGES / name
+    30	        if src.is_dir():
+    31	            shutil.copytree(src, dst, dirs_exist_ok=True)
+    32	        else:
+    33	            shutil.copy2(src, dst)
+    34	    run = lambda *a: subprocess.run(["git", "-C", str(PAGES), *a], capture_output=True, text=True)
+    35	    run("add", "-A")
+    36	    if run("diff", "--cached", "--quiet").returncode == 0:
+    37	        return "sin cambios"
+    38	    run("commit", "-qm", f"Datos {stamp}")
+    39	    r = run("push", "-q", "origin", "gh-pages")
+    40	    return "publicado" if r.returncode == 0 else f"push falló: {r.stderr.strip()[:120]}"
+    41	
+    42	
+    43	def main():
+    44	    ap = argparse.ArgumentParser()
+    45	    ap.add_argument("--date", default="2026-11-03")
+    46	    ap.add_argument("--every", type=int, default=60)
+    47	    ap.add_argument("--push", type=int, default=480)
+    48	    ap.add_argument("--no-push", action="store_true")
+    49	    a = ap.parse_args()
+    50	    outdir = ROOT / "data" / "live" / a.date
+    51	    bar = tqdm(total=1, desc="Noche electoral", unit="página", goal="bajar, proyectar y publicar en vivo")
+    52	    bar.info(fuente="NYT / AP", ciclo=f"{a.every}s", publica="no" if a.no_push else f"cada {a.push}s")
+    53	    last_push = 0.0
+    54	    while True:
+    55	        t0 = time.time()
+    56	        try:
+    57	            F.cycle(a.date, outdir, bar)
+    58	            bar.status("proyectando")
+    59	            sys.argv = ["project.py", "--date", a.date, "--out", str(ROOT / "dash")]
+    60	            P.main()
+    61	            stamp = time.strftime("%H:%M")
+    62	            if not a.no_push and time.time() - last_push >= a.push:
+    63	                bar.status("publicando")
+    64	                bar.log(f"{stamp} {publish(stamp)}")
+    65	                last_push = time.time()
+    66	        except Exception as e:  # una caída de red o un JSON a medio escribir no corta la noche
+    67	            bar.log(f"error: {type(e).__name__}: {str(e)[:120]}")
+    68	        bar.status("esperando el próximo ciclo")
+    69	        time.sleep(max(5, a.every - (time.time() - t0)))
+    70	
+    71	
+    72	if __name__ == "__main__":
+    73	    main()
+
+hook: PostToolUse
+hook: PostToolUse Completed
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+exec
+/bin/zsh -lc "OPENBLAS_NUM_THREADS=6 PYTHONDONTWRITEBYTECODE=1 /Users/juan/.cache/uv/archive-v0/U1fTPxkk7o3jmpSp/bin/python -c 'import sys,numpy as np,pandas as pd
+sys.path.append(\"/Users/juan/.cache/uv/archive-v0/bZpT0vvm7eKoJIB5/lib/python3.13/site-packages\"); sys.path.insert(0,\"model\"); import project as P; import rehearse as Q
+d=P.load(\"2024-11-05\"); d=d[d.race_id==\"NE-G-S-2024-11-05\"].reset_index(drop=True)
+n=len(d); state=(np.zeros(n),np.ones(n),np.zeros(n),np.ones(n)); z=Q.rebuild_state_rows(Q.synth(d,10,state,.04))
+print(\"NE final true\",d[d.level==\"state\"][[\"D\",\"R\",\"O\"]].to_dict(\"records\")); print(\"NE synthetic final\",z[z.level==\"state\"][[\"D\",\"R\",\"O\"]].to_dict(\"records\")); print(\"NE truth metric\",max(d.iloc[0].D,d.iloc[0].O)/(max(d.iloc[0].D,d.iloc[0].O)+d.iloc[0].R))
+m=P.Model(z).fit().simulate(); print(\"NE end simulation\",m.summary({})[\"races\"][0])
+h=P.load(\"2026-11-03\"); h=h[h.race_id==\"IL-G-H-7-2026-11-03\"].copy(); s=h[h.level==\"state\"].expected.iloc[0]; Q.rebuild_state_rows(h); print(\"IL7 original expected\",s,\"rebuilt\",h[h.level==\"state\"].expected.iloc[0])
+'" in /Users/juan/dev/midterms-2026-proyeccion
+ succeeded in 313ms:
+NE final true [{'D': 0, 'R': 499124, 'O': 436493}]
+NE synthetic final [{'D': 4988.0, 'R': 494136.0, 'O': 436493.0}]
+NE truth metric 0.46652957353275964
+NE end simulation {'id': 'NE-G-S-2024-11-05', 'office': 'S', 'state': 'NE', 'seat': '1', 'rating': 'lean-rep', 'side': 'O', 'same_party': False, 'parties': 'OR', 'call': 'too_early', 'winner': '', 'eevp': 99.0, 'counted': 935617.0, 'expected': 935617.0, 'partial_B': 46.9, 'partial_R': 53.1, 'proj_B': 46.9, 'proj_R': 53.1, 'ci90_B': [46.9, 46.9], 'ci90_R': [53.1, 53.1], 'p_B_win': 0.0, 'runoff_risk': False}
+IL7 original expected 207488.0 rebuilt 414976.0
+
+hook: PostToolUse
+hook: PostToolUse Completed
+codex
+Confirmé dos errores numéricos: cuando el lado elegido es `O`, el modelo resta sus votos dos veces del remanente tipificado; y las carreras entre demócratas salen con proyección D=0%, R=100%. Los umbrales actuales sí se leen correctamente del feed: Senado D=51/R=50 y Cámara=218. También encontré un doble conteo entre niveles en la función de reconstrucción del ensayo.
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+exec
+/bin/zsh -lc "OPENBLAS_NUM_THREADS=6 PYTHONDONTWRITEBYTECODE=1 /Users/juan/.cache/uv/archive-v0/U1fTPxkk7o3jmpSp/bin/python -c 'import sys,numpy as np,pandas as pd
+sys.path.insert(0,\"model\"); import project as P
+z=P.load(\"2026-11-03\"); z=z[(z.office==\"S\")&(z.level==\"state\")].iloc[[0]].copy(); z.loc[:,\"race_id\"]=\"test\"; z.loc[:,\"parties\"]=\"DR\"; z.loc[:,\"rating\"]=\"tossup\"; z.loc[:,\"b\"]=.5; z.loc[:,\"winner\"]=\"\"; z.loc[:,\"D\"]=250000; z.loc[:,\"R\"]=250000; z.loc[:,\"O\"]=0; z.loc[:,\"total\"]=500000; z.loc[:,\"expected\"]=1000000; z.loc[:,\"eevp\"]=50
+co=pd.concat([z.assign(level=\"county\",unit_id=\"a\"),z.assign(level=\"county\",unit_id=\"b\")],ignore_index=True); top=z.assign(total=1000000,expected=2000000); m=P.Model(pd.concat([top,co],ignore_index=True)).fit(); i=0; race=m.races.iloc[0]; x=np.zeros(m.npar)
+for j,v in m._design(i,-1,race):
+ if j<m.o_bias:x[j]=v
+vbin=1/(500000*.25)+P.SD[\"floor\"]**2; lam=m.sd_unit[0]**2/(vbin+m.sd_unit[0]**2)
+print(\"unit posterior\",dict(shrinkage=lam,implemented_sd=float(np.sqrt(x@m.cov@x+m.e_sd[0]**2)),correct_conditional_sd=float(np.sqrt((1-lam)**2*(x@m.cov@x)+m.e_sd[0]**2))))
+# Exact complete-model posterior with a shared unit intercept and 4 observed vote types vs implemented covariance
+for t in P.TYPES:
+ co.loc[:,f\"D_{t}\"]=62500; co.loc[:,f\"R_{t}\"]=62500
+mm=P.Model(pd.concat([top,co],ignore_index=True)).fit(); n=mm.npar; A=np.zeros((n+2,n+2)); sd=np.zeros(n); sd[0]=P.SD[\"nat\"]; sd[mm.o_state:mm.o_race]=P.SD[\"state\"]; sd[mm.o_race:mm.o_type]=mm.races.sd_race.values; sd[mm.o_type:mm.o_bias]=P.SD[\"type\"]; sd[mm.o_bias:]=P.SD[\"bias\"]; A[:n,:n]=np.diag(1/sd**2)
+for i in range(2):
+ A[n+i,n+i]=1/mm.sd_unit[i]**2
+ for ti in range(4):
+  xx=np.zeros(n+2)
+  for j,v in mm._design(i,ti,mm.races.iloc[0]):xx[j]=v
+  xx[n+i]=1; A+=np.outer(xx,xx)/(1/(125000*.25)+P.SD[\"floor\"]**2)
+true=np.linalg.inv(A); print(\"typed national posterior sd: implemented\",float(np.sqrt(mm.cov[0,0])),\"exact\",float(np.sqrt(true[0,0])))
+'" in /Users/juan/dev/midterms-2026-proyeccion
+ succeeded in 179ms:
+unit posterior {'shrinkage': np.float64(0.9463722397476341), 'implemented_sd': 0.08313501539024183, 'correct_conditional_sd': 0.02012178557545384}
+typed national posterior sd: implemented 0.07128862656563886 exact 0.07202369261278792
+
+hook: PostToolUse
+hook: PostToolUse Completed
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+exec
+/bin/zsh -lc "OPENBLAS_NUM_THREADS=6 PYTHONDONTWRITEBYTECODE=1 /Users/juan/.cache/uv/archive-v0/U1fTPxkk7o3jmpSp/bin/python -c 'import sys,numpy as np,pandas as pd
+sys.path.insert(0,\"model\"); import project as P
+z=P.load(\"2026-11-03\"); z=z[(z.office==\"S\")&(z.level==\"state\")].iloc[[0]].copy().assign(race_id=\"test\",parties=\"DR\",rating=\"tossup\",b=.5,winner=\"\",D=250000,R=250000,O=0,total=500000,expected=1000000,eevp=50)
+co=pd.concat([z.assign(level=\"county\",unit_id=\"a\"),z.assign(level=\"county\",unit_id=\"b\")],ignore_index=True); m=P.Model(pd.concat([z.assign(total=1000000,expected=2000000),co],ignore_index=True)).fit(); obs=np.zeros(m.npar)
+for j,v in m._design(0,-1,m.races.iloc[0]):obs[j]=v
+pred=obs.copy(); pred[m.o_bias:]=0
+vbin=1/(500000*.25)+P.SD[\"floor\"]**2; lam=m.sd_unit[0]**2/(vbin+m.sd_unit[0]**2); adjusted=pred-lam*obs
+print(\"implemented\",float(np.sqrt(pred@m.cov@pred+m.e_sd[0]**2)),\"correct\",float(np.sqrt(adjusted@m.cov@adjusted+m.e_sd[0]**2)))
+'" in /Users/juan/dev/midterms-2026-proyeccion
+ succeeded in 204ms:
+implemented 0.08313501539024183 correct 0.07249957809039306
+
+hook: PostToolUse
+hook: PostToolUse Completed
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+hook: PreToolUse Completed
+exec
+/bin/zsh -lc "OPENBLAS_NUM_THREADS=6 PYTHONDONTWRITEBYTECODE=1 /Users/juan/.cache/uv/archive-v0/U1fTPxkk7o3jmpSp/bin/python -c 'import sys,numpy as np
+sys.path.insert(0,\"model\"); import project as P
+z=P.load(\"2024-11-05\"); z=z[(z.office==\"S\")&(z.level==\"state\")]; m=P.Model(z); m.share=np.zeros((P.K,len(m.races))); m.win_B=np.tile((m.races.winner.str[0]"'!="R").values,(P.K,1)); print(m.summary(P.control_from_raw("2024-11-05"))["chambers"]["S"])
+'"'" in /Users/juan/dev/midterms-2026-proyeccion
+ succeeded in 244ms:
+{'total': 100, 'D_needs': 51, 'R_needs': 51, 'p_D': 0.0, 'p_R': 1.0, 'D_med': 45, 'R_med': 53, 'I_med': 2, 'D_ci90': [45, 45], 'R_ci90': [53, 53], 'dist': {45: np.float64(1.0)}}
+
+hook: PostToolUse
+hook: PostToolUse Completed
+codex
+Found the following correctness bugs. References point to the current files; several scenarios were reproduced with in-memory inputs and the checked-in feeds.
+
+1. **[P1] Candidate aggregation changes who can win.** [fetch_nyt.py:102](/Users/juan/dev/midterms-2026-proyeccion/model/fetch_nyt.py:102), [project.py:158](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:158). All independents and minor candidates become one `O` candidate, and only the larger of aggregate D/O competes against R. Two independents receiving 26% each therefore beat a Republican receiving 48%. In an actual D-versus-independent race such as 2026 CA-06, the model instead invents a Republican opponent and ignores the other real candidate.
+
+2. **[P1] Called winners can be credited to the wrong party.** [project.py:340](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:340), [project.py:373](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:373). A call sets only “non-R won”; chamber allocation still uses the side selected from current votes. If `side=D` when an independent is called, the independent’s seat becomes Democratic. The reverse misclassifies a called Democrat as independent.
+
+3. **[P1] Independent caucuses are discarded in chamber control.** [fetch_nyt.py:77](/Users/juan/dev/midterms-2026-proyeccion/model/fetch_nyt.py:77), [project.py:375](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:375). The feed supplies `party_caucus`, but flattening drops it and `p_D` excludes every independent win. The 2024 Senate fixture consequently produces D=45/I=2/R=53 versus the feed’s Democratic caucus total of 47. A 49-D-plus-two-D-caucusing-independent outcome incorrectly fails the 51-seat control test.
+
+4. **[P1] Independent votes are subtracted twice from typed remaining votes.** [project.py:308](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:308). When `side=O`, `got_t` becomes `O_t + R_t + O_t`, omitting D. Reproduced: expected=1,000, O=300, R=200 gives only **200 remaining**, rather than 500. Independent races can prematurely run out of projected votes.
+
+5. **[P1] Partial vote-type expectations discard the rest of the outstanding vote.** [project.py:309](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:309). Any positive typed expectation completely replaces the aggregate remainder. With aggregate expected=1,000/counted=500 and only an advance category expected=counted=200, the model projects **zero remaining**, although 500 votes remain. Conversely, inconsistent typed totals can project more than the aggregate remainder.
+
+6. **[P1] Stale state pages override fresh overview results indefinitely.** [fetch_nyt.py:87](/Users/juan/dev/midterms-2026-proyeccion/model/fetch_nyt.py:87), [fetch_nyt.py:98](/Users/juan/dev/midterms-2026-proyeccion/model/fetch_nyt.py:98). State pages always win deduplication, without a freshness comparison. If a state-page request fails while the overview receives new totals or a call, the old local page suppresses those updates. The projection can silently remain uncalled and behind the count.
+
+7. **[P1] Unit selection silently drops uncovered geography.** [project.py:127](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:127). A sublevel covering just over 90% of expected votes replaces the complete state row without retaining a residual. Reproduced: selected counties contain 450 counted/950 expected versus the state’s 500/1,000; all projections omit the missing geography, while the displayed race totals still come from the state. This also drops smaller residual units in the current feed, such as Maine House “other” units.
+
+8. **[P1] Majority/runoff and ranked tabulations are treated as ordinary two-side wins.** [project.py:334](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:334), [project.py:366](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:366). `tabulation` is loaded but unused; `runoff_risk` is only a label. A 48-D/47-R/5-other result becomes a Democratic win because D/(D+R)>50%, even where that result requires a runoff. Chamber simulations immediately award the seat.
+
+9. **[P2] Same-party Democratic races report a 100% Republican vote projection.** [project.py:297](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:297), [project.py:334](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:334). Simulation skips these races, leaving both vote arrays zero; normalization produces `share=0`. Reproduced for `parties=DD`: `proj_B=0`, `proj_R=100`, but `p_B_win=1`. Current California D/D contests trigger this.
+
+10. **[P2] Typed observations incorrectly treat the shared unit effect as independent noise.** [project.py:248](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:248). Each vote-type cell receives a separate `sd_unit²` variance, although all cells in that unit share the same `e[u]`. Their covariance is missing. Four large typed batches from one county can contribute roughly four times the information warranted by the shared county deviation, distorting posterior learning and confidence intervals.
+
+11. **[P2] Simulated unit effects lose their posterior dependence on model coefficients.** [project.py:264](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:264), [project.py:303](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:303). `e_hat` is computed using mean coefficients and then sampled independently of coefficient draws. Its conditional mean should change with each draw. The resulting remaining-vote draws do not follow the fitted posterior; a two-county reproduction gave a projected-logit SD of 0.083 versus 0.072 with the conditional dependence retained, before additional shocks.
+
+12. **[P2] The rehearsal changes the final result it claims to reproduce.** [rehearse.py:41](/Users/juan/dev/midterms-2026-proyeccion/model/rehearse.py:41). Even at `f=1`, clipping D’s share to `[.01,.99]` transfers votes between D and R. Reproduced for Nebraska Senate 2024: the true D=0/R=499,124 becomes synthetic D=4,988/R=494,136, while O remains 436,493. Final projected independent share is 46.90% against the rehearsal truth of 46.65%, contaminating error and coverage metrics.
+
+13. **[P2, latent] Rebuilding state rows double-counts overlapping reporting levels.** [rehearse.py:58](/Users/juan/dev/midterms-2026-proyeccion/model/rehearse.py:58). It sums every non-state/non-national row, unlike `pick_units`. Applied to current IL-07, county plus city/other rows turn expected votes from **207,488 into 414,976**. The current S/G-only 2024 rehearsal avoids this input, but the helper is incorrect for mixed-level feeds.
+
+The checked-in 2026 feed’s holdovers and thresholds are read correctly: Senate D holdovers=34, Republican threshold=50, Democratic threshold=51; House threshold=218. The chamber errors above arise from winner/caucus classification, rather than those constants.
+hook: Stop
+hook: Stop
+hook: Stop Completed
+hook: Stop Completed
+tokens used
+69.235
+Found the following correctness bugs. References point to the current files; several scenarios were reproduced with in-memory inputs and the checked-in feeds.
+
+1. **[P1] Candidate aggregation changes who can win.** [fetch_nyt.py:102](/Users/juan/dev/midterms-2026-proyeccion/model/fetch_nyt.py:102), [project.py:158](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:158). All independents and minor candidates become one `O` candidate, and only the larger of aggregate D/O competes against R. Two independents receiving 26% each therefore beat a Republican receiving 48%. In an actual D-versus-independent race such as 2026 CA-06, the model instead invents a Republican opponent and ignores the other real candidate.
+
+2. **[P1] Called winners can be credited to the wrong party.** [project.py:340](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:340), [project.py:373](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:373). A call sets only “non-R won”; chamber allocation still uses the side selected from current votes. If `side=D` when an independent is called, the independent’s seat becomes Democratic. The reverse misclassifies a called Democrat as independent.
+
+3. **[P1] Independent caucuses are discarded in chamber control.** [fetch_nyt.py:77](/Users/juan/dev/midterms-2026-proyeccion/model/fetch_nyt.py:77), [project.py:375](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:375). The feed supplies `party_caucus`, but flattening drops it and `p_D` excludes every independent win. The 2024 Senate fixture consequently produces D=45/I=2/R=53 versus the feed’s Democratic caucus total of 47. A 49-D-plus-two-D-caucusing-independent outcome incorrectly fails the 51-seat control test.
+
+4. **[P1] Independent votes are subtracted twice from typed remaining votes.** [project.py:308](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:308). When `side=O`, `got_t` becomes `O_t + R_t + O_t`, omitting D. Reproduced: expected=1,000, O=300, R=200 gives only **200 remaining**, rather than 500. Independent races can prematurely run out of projected votes.
+
+5. **[P1] Partial vote-type expectations discard the rest of the outstanding vote.** [project.py:309](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:309). Any positive typed expectation completely replaces the aggregate remainder. With aggregate expected=1,000/counted=500 and only an advance category expected=counted=200, the model projects **zero remaining**, although 500 votes remain. Conversely, inconsistent typed totals can project more than the aggregate remainder.
+
+6. **[P1] Stale state pages override fresh overview results indefinitely.** [fetch_nyt.py:87](/Users/juan/dev/midterms-2026-proyeccion/model/fetch_nyt.py:87), [fetch_nyt.py:98](/Users/juan/dev/midterms-2026-proyeccion/model/fetch_nyt.py:98). State pages always win deduplication, without a freshness comparison. If a state-page request fails while the overview receives new totals or a call, the old local page suppresses those updates. The projection can silently remain uncalled and behind the count.
+
+7. **[P1] Unit selection silently drops uncovered geography.** [project.py:127](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:127). A sublevel covering just over 90% of expected votes replaces the complete state row without retaining a residual. Reproduced: selected counties contain 450 counted/950 expected versus the state’s 500/1,000; all projections omit the missing geography, while the displayed race totals still come from the state. This also drops smaller residual units in the current feed, such as Maine House “other” units.
+
+8. **[P1] Majority/runoff and ranked tabulations are treated as ordinary two-side wins.** [project.py:334](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:334), [project.py:366](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:366). `tabulation` is loaded but unused; `runoff_risk` is only a label. A 48-D/47-R/5-other result becomes a Democratic win because D/(D+R)>50%, even where that result requires a runoff. Chamber simulations immediately award the seat.
+
+9. **[P2] Same-party Democratic races report a 100% Republican vote projection.** [project.py:297](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:297), [project.py:334](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:334). Simulation skips these races, leaving both vote arrays zero; normalization produces `share=0`. Reproduced for `parties=DD`: `proj_B=0`, `proj_R=100`, but `p_B_win=1`. Current California D/D contests trigger this.
+
+10. **[P2] Typed observations incorrectly treat the shared unit effect as independent noise.** [project.py:248](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:248). Each vote-type cell receives a separate `sd_unit²` variance, although all cells in that unit share the same `e[u]`. Their covariance is missing. Four large typed batches from one county can contribute roughly four times the information warranted by the shared county deviation, distorting posterior learning and confidence intervals.
+
+11. **[P2] Simulated unit effects lose their posterior dependence on model coefficients.** [project.py:264](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:264), [project.py:303](/Users/juan/dev/midterms-2026-proyeccion/model/project.py:303). `e_hat` is computed using mean coefficients and then sampled independently of coefficient draws. Its conditional mean should change with each draw. The resulting remaining-vote draws do not follow the fitted posterior; a two-county reproduction gave a projected-logit SD of 0.083 versus 0.072 with the conditional dependence retained, before additional shocks.
+
+12. **[P2] The rehearsal changes the final result it claims to reproduce.** [rehearse.py:41](/Users/juan/dev/midterms-2026-proyeccion/model/rehearse.py:41). Even at `f=1`, clipping D’s share to `[.01,.99]` transfers votes between D and R. Reproduced for Nebraska Senate 2024: the true D=0/R=499,124 becomes synthetic D=4,988/R=494,136, while O remains 436,493. Final projected independent share is 46.90% against the rehearsal truth of 46.65%, contaminating error and coverage metrics.
+
+13. **[P2, latent] Rebuilding state rows double-counts overlapping reporting levels.** [rehearse.py:58](/Users/juan/dev/midterms-2026-proyeccion/model/rehearse.py:58). It sums every non-state/non-national row, unlike `pick_units`. Applied to current IL-07, county plus city/other rows turn expected votes from **207,488 into 414,976**. The current S/G-only 2024 rehearsal avoids this input, but the helper is incorrect for mixed-level feeds.
+
+The checked-in 2026 feed’s holdovers and thresholds are read correctly: Senate D holdovers=34, Republican threshold=50, Democratic threshold=51; House threshold=218. The chamber errors above arise from winner/caucus classification, rather than those constants.

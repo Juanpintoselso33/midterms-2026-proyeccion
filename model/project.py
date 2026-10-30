@@ -1,44 +1,44 @@
 """Proyección en vivo de las midterms 2026 (Senado, gobernaciones y Cámara).
 
-Modelo (en logit de la proporción bipartidaria D/(D+R), o del principal no-republicano
-cuando no hay demócrata):
+Cada carrera se modela entre sus dos candidatos principales: X (el principal no republicano:
+demócrata, o un independiente cuando es el que compite) e Y (el republicano principal; si no
+hay, el siguiente más votado). Se modela la proporción y = X / (X + Y) en logit:
 
-    logit y[u,t] = logit b[u] + rho0[r] + n_nat + n_state[s] + n_race[r] + d[s,t] + e[u]
+    logit y[u,t] = logit b[u] + rho0[r] + n_nat + n_state[s] + n_race[r] + d[s,t]
+                   + f[s]·bias[s] + e[u]
 
   b[u]      base histórica de la unidad (presidencial 2024 por condado o pedazo de distrito)
-  rho0[r]   prior de la carrera: la calificación (solid/likely/lean/tossup) traducida a una
-            proporción esperada, menos la base promedio de la carrera
-  n_nat     error nacional compartido por todas las carreras (lo que aprende el este del país
-            se transmite al oeste)
+  rho0[r]   prior de la carrera según su calificación (solid/likely/lean/tossup)
+  n_nat     error nacional compartido por todas las carreras (lo que aprende el este se
+            transmite al oeste)
   n_state   error estatal compartido por las carreras del mismo estado
   n_race    error propio de la carrera
-  d[s,t]    efecto del tipo de voto (anticipado, correo, día de elección, provisional) por estado
-  e[u]      desvío propio de la unidad
+  d[s,t]    efecto del tipo de voto (anticipado, correo, día de elección, provisional)
+  bias[s]   sesgo del orden de conteo del estado: sólo afecta a lo ya contado, con peso f[s] =
+            fracción que falta contar; no se proyecta a los votos pendientes
+  e[u]      desvío propio de la unidad, integrado como varianza extra de sus observaciones
 
 Se estima por mínimos cuadrados ponderados penalizados (los priors entran como
-pseudo-observaciones), con pesos binomiales más un piso de sobredispersión. Los votos que
-faltan (esperados por AP - contados) se proyectan con el modelo, por unidad y tipo. La
-incertidumbre se simula con shocks nacionales, estatales, de carrera, de tipo y de
-participación escalados por la fracción no escrutada; con eso salen las probabilidades de
-victoria y de control de cada cámara.
+pseudo-observaciones) y se simula con la covarianza posterior completa más shocks sobre los
+votos pendientes. Con eso salen las probabilidades de victoria, de balotaje (umbral del 50%)
+y de control de cada cámara, contando las bancas por bancada (King y Sanders con los
+demócratas).
 
 Uso:  uv run --with numpy --with scipy --with pandas model/project.py [--date 2026-11-03]
 """
-import argparse, json, os
+import argparse, json
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy import sparse
-from scipy.sparse.linalg import spsolve
 
 ROOT = Path(__file__).resolve().parent.parent
 TYPES = ("advance", "absentee_mail", "election_day_in_person", "provisional")
 
 # Calificación -> (mínimo, máximo de la proporción bipartidaria D, sd del prior de carrera en
-# logit). La base histórica se recorta a ese rango: la calificación dice quién va adelante y
-# por cuánto como máximo, no fija el resultado.
+# logit). En las competitivas manda el centro del rango; en las seguras/probables, la base
+# histórica recortada al rango.
 RATING = {
     "solid-dem": (0.57, 1.00, 0.20), "likely-dem": (0.53, 0.60, 0.13), "lean-dem": (0.51, 0.55, 0.10),
     "tilt-dem": (0.50, 0.53, 0.09), "tossup": (0.48, 0.52, 0.09), "tilt-rep": (0.47, 0.50, 0.09),
@@ -60,10 +60,14 @@ def expit(x):
     return 1 / (1 + np.exp(-x))
 
 
-def num(df, cols):
-    for c in cols:
-        df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
-    return df
+def shock_curve(f):
+    """Peso del shock sobre los votos QUE FALTAN según la fracción no escrutada f.
+
+    Sin votos (f=1) vale 0 porque la incertidumbre ya está en el prior; aparece completo con
+    los primeros votos. No se multiplica por f: el shock se aplica sólo a los votos pendientes,
+    así que su efecto sobre el total ya se achica solo a medida que se cuenta.
+    """
+    return 1 - np.exp(-(1 - f) / 0.03)
 
 
 # ---------------------------------------------------------------- carga y bases
@@ -84,14 +88,15 @@ def district_baseline():
     return dict(zip(d["district"], d["dem_share_2way_2024"]))
 
 
+NUMERIC = (["eevp", "expected", "total", "hist_dem", "hist_rep", "X", "Y", "win_threshold"]
+           + [f"{p}_{t}" for p in "XYT" for t in TYPES] + [f"exp_{t}" for t in TYPES])
+
+
 def load(date, units_csv=None, base_year=None):
     units_csv = units_csv or ROOT / f"data/live/{date}/units.csv"
-    df = pd.read_csv(units_csv, dtype={"fips": str, "seat": str, "winner": str, "parties": str},
-                     keep_default_na=False, na_values={"eevp": [""], "expected": [""]})
-    df["fips"] = df["fips"].fillna("")
-    cols = ["eevp", "expected", "total", "hist_dem", "hist_rep", "D", "R", "O"]
-    cols += [f"{p}_{t}" for p in "DRO" for t in TYPES] + [f"exp_{t}" for t in TYPES]
-    df = num(df, cols)
+    df = pd.read_csv(units_csv, dtype=str, keep_default_na=False)
+    for c in NUMERIC:
+        df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
     base_year = base_year or (2024 if date >= "2025" else 2020)
     cmap, smap = county_baseline(base_year)
     dmap = district_baseline() if base_year == 2024 else {}
@@ -111,8 +116,12 @@ def load(date, units_csv=None, base_year=None):
     return df
 
 
+VOTE_COLS = ["X", "Y", "total", "expected"] + [f"{p}_{t}" for p in "XYT" for t in TYPES] + [f"exp_{t}" for t in TYPES]
+
+
 def pick_units(df):
-    """Un único nivel geográfico por carrera, sin solapamientos."""
+    """Un único nivel geográfico por carrera, sin solapamientos, más una unidad residual con
+    lo que la fila estatal tenga y el nivel elegido no cubra (no se pierde geografía)."""
     out = []
     for rid, g in df.groupby("race_id", sort=False):
         top = g[g.level == "state"]
@@ -124,26 +133,31 @@ def pick_units(df):
                 gap = abs(gl.expected.sum() - target) if target else -len(gl)
                 if best is None or gap < best[0]:
                     best = (gap, gl)
-        if best is not None and (not len(top) or best[1].expected.sum() > 0.9 * top.expected.sum()):
-            out.append(best[1])
-        else:
-            out.append(top.head(1))
-    return pd.concat(out, ignore_index=True)
+        if best is None or not len(top) or best[1].expected.sum() < 0.5 * top.expected.sum():
+            out.append(top.head(1) if len(top) else g.head(1))
+            continue
+        chosen = best[1]
+        out.append(chosen)
+        t = top.iloc[0]
+        resid = {c: max(t[c] - chosen[c].sum(), 0) for c in VOTE_COLS}
+        if resid["expected"] > 0.005 * t.expected or resid["total"] > 0.005 * max(t.total, 1):
+            r = t.copy()
+            for c, v in resid.items():
+                r[c] = v
+            r["unit_id"], r["level"], r["name"], r["fips"] = f"{t.unit_id}-resto", "resto", "Resto", ""
+            r["eevp"] = min(100 * r.total / r.expected, 100) if r.expected > 0 else 0
+            out.append(r.to_frame().T)
+    u = pd.concat(out, ignore_index=True)
+    for c in NUMERIC + ["b"]:
+        u[c] = pd.to_numeric(u[c], errors="coerce").fillna(0)
+    return u
 
 
 # ---------------------------------------------------------------- cuerpo del modelo
-def shock_curve(f):
-    """Peso del shock sobre los votos QUE FALTAN según la fracción no escrutada f.
-
-    Sin votos (f=1) vale 0 porque la incertidumbre ya está en el prior; aparece completo con
-    los primeros votos. No se multiplica por f: el shock se aplica sólo a los votos pendientes,
-    así que su efecto sobre el total ya se achica solo a medida que se cuenta.
-    """
-    return 1 - np.exp(-(1 - f) / 0.03)
-
-
 class Model:
     def __init__(self, df):
+        # 'US-G-H-...' es el voto popular nacional de la Cámara, no una banca
+        df = df[~df.race_id.str.startswith("US-")]
         self.u = pick_units(df).reset_index(drop=True)
         self.races = self._races(df)
         self._index()
@@ -153,29 +167,27 @@ class Model:
         rows = []
         for rid, g in self.u.groupby("race_id", sort=False):
             t = top.loc[rid] if rid in top.index else g.iloc[0]
-            parties = str(t.get("parties", "") or "")
-            # lado no republicano: el que más votos tiene; sin votos, el demócrata si hay
-            if g.D.sum() + g.O.sum() > 0 and "O" in parties:
-                side = "D" if g.D.sum() >= g.O.sum() else "O"
-            else:
-                side = "D" if "D" in parties else ("O" if "O" in parties else "D")
-            same = bool(parties) and len(set(parties)) == 1 and parties[0] in "DR"
+            xp, yp = t.x_party, t.y_party
+            # sin rival, o los dos del mismo partido: la banca ya tiene dueño
+            fixed = (not t.y_id) or (xp == yp and xp in ("D", "R"))
             w = g.expected.where(g.expected > 0, 1)
             bbar = float(np.average(g.b, weights=w))
-            lo, hi, sd = RATING.get(str(t.get("rating")), (0.0, 1.0, 0.20))
-            # competitivas: manda el centro de la calificación (la base de 2024 trae el clima de
-            # ese año); seguras/probables: la base histórica recortada al rango.
-            rating = str(t.get("rating"))
+            rating = str(t.rating)
+            lo, hi, sd = RATING.get(rating, (0.0, 1.0, 0.20))
             if rating.split("-")[0] in ("tossup", "tilt", "lean"):
                 p0 = (lo + hi) / 2
             else:
                 p0 = float(np.clip(bbar, lo, hi))
+            won = [w_ for w_ in str(t.winner_ids).split(",") if w_]
+            called = "X" if t.x_id in won else ("Y" if t.y_id in won else ("?" if won else ""))
             rows.append(dict(
-                race_id=rid, office=t.office, state=t.state, seat=t.seat, rating=t.get("rating"),
-                side=side, same_party=same, parties=parties, race_type=t.get("race_type"),
-                tabulation=t.get("tabulation"), call=t.get("call"), winner=str(t.get("winner") or ""),
-                rho0=float(logit(p0) - logit(bbar)), sd_race=sd, bbar=bbar,
+                race_id=rid, office=t.office, state=t.state, seat=t.seat, rating=t.rating,
+                x_id=t.x_id, y_id=t.y_id, x_name=t.x_name, y_name=t.y_name, x_party=xp, y_party=yp,
+                x_caucus=t.x_caucus or xp, y_caucus=t.y_caucus or yp, fixed=bool(fixed),
+                tabulation=t.tabulation, threshold=float(t.win_threshold or 0), race_type=t.race_type,
+                call=t.call, called=called, rho0=float(logit(p0) - logit(bbar)), sd_race=sd, bbar=bbar,
                 expected=float(t.expected), counted=float(t.total), eevp=float(t.eevp),
+                X=float(t.X), Y=float(t.Y),
             ))
         return pd.DataFrame(rows).set_index("race_id")
 
@@ -184,10 +196,7 @@ class Model:
         self.states = sorted(self.races.state.dropna().unique())
         self.si = {s: i for i, s in enumerate(self.states)}
         nr, ns, nt = len(self.ri), len(self.si), len(TYPES)
-        # parámetros: nat | state | race | type(state,t) | bias(state). El desvío de cada unidad
-        # no es un parámetro: entra como varianza extra de su observación (efecto aleatorio
-        # integrado). `bias` es el sesgo del orden de conteo de cada estado: afecta sólo a lo ya
-        # contado, con peso igual a la fracción que falta contar, y no se proyecta a lo pendiente.
+        # parámetros: nat | state | race | type(state,t) | bias(state)
         self.o_state, self.o_race, self.o_type = 1, 1 + ns, 1 + ns + nr
         self.o_bias = self.o_type + ns * nt
         self.npar = self.o_bias + ns
@@ -200,24 +209,18 @@ class Model:
         self.wu = (self.u.expected / tot).clip(0, 1).values
         self.sd_unit = np.maximum(SD["unit"] * np.sqrt(1 - self.wu), 1e-3)
 
-    def _B(self, u, side):
-        return u.D if side == "D" else u.O
-
     def _cells(self):
-        """Celdas observadas (unidad, tipo) con votos contados para los dos lados."""
+        """Celdas observadas (unidad, tipo) con votos contados para X o Y."""
         cells = []
         for i, r in self.u.iterrows():
-            race = self.races.loc[r.race_id]
-            if race.same_party:
+            if self.races.at[r.race_id, "fixed"]:
                 continue
-            B = self._B(r, race.side)
-            typed = [(t, r[f"{race.side}_{t}"], r[f"R_{t}"]) for t in TYPES]
-            if sum(b + a for _, b, a in typed) >= 0.95 * (B + r.R) > 0:
-                for t, b, a in typed:
-                    if a + b > 0:
-                        cells.append((i, TYPES.index(t), b, a))
-            elif B + r.R > 0:
-                cells.append((i, -1, B, r.R))
+            typed = [(TYPES.index(t), r[f"X_{t}"], r[f"Y_{t}"]) for t in TYPES]
+            typed = [c for c in typed if c[1] + c[2] > 0]
+            if typed and sum(b + a for _, b, a in typed) >= 0.95 * (r.X + r.Y):
+                cells += [(i, t, b, a, len(typed)) for t, b, a in typed]
+            elif r.X + r.Y > 0:
+                cells.append((i, -1, r.X, r.Y, 1))
         return cells
 
     def _design(self, i, t, race):
@@ -239,13 +242,15 @@ class Model:
         A = np.diag(1 / prior ** 2)
         rhs = np.zeros(self.npar)
         obs = []
-        for i, t, b, a in cells:
+        for i, t, b, a, m in cells:
             u = self.u.loc[i]
             race = self.races.loc[u.race_id]
             n = a + b
             p = (b + 0.5) / (n + 1)
             v_bin = 1 / (n * p * (1 - p)) + SD["floor"] ** 2
-            v = v_bin + self.sd_unit[i] ** 2
+            # el desvío de la unidad es uno solo para todas sus celdas por tipo: repartido en m
+            # celdas, cada una lleva m veces su varianza (así no se cuenta m veces la misma info)
+            v = v_bin + m * self.sd_unit[i] ** 2
             yv = logit(p) - logit(u.b) - race.rho0
             js = self._design(i, t, race)
             for j, xj in js:
@@ -255,14 +260,21 @@ class Model:
             obs.append((i, js, yv, v_bin))
         self.cov = np.linalg.inv(A)
         self.theta = self.cov @ rhs
-        # desvío propio de cada unidad que ya reportó (BLUP), para proyectar lo que le falta
-        num_, den_ = np.zeros(len(self.u)), np.zeros(len(self.u))
+        # desvío de cada unidad que ya reportó (BLUP), lineal en los coeficientes: e(θ) =
+        # e_hat - g_u·(θ - θ̂). Se guarda g_u para que cada simulación use su propio θ.
+        n_u = len(self.u)
+        num_, den_ = np.zeros(n_u), np.zeros(n_u)
+        self.g = [dict() for _ in range(n_u)]
         for i, js, yv, v_bin in obs:
             num_[i] += (yv - sum(self.theta[j] * x for j, x in js)) / v_bin
             den_[i] += 1 / v_bin
+            for j, x in js:
+                self.g[i][j] = self.g[i].get(j, 0) + x / v_bin
         s2 = self.sd_unit ** 2
-        self.e_hat = num_ / (den_ + 1 / s2)
-        self.e_sd = np.sqrt(1 / (den_ + 1 / s2))
+        tot = den_ + 1 / s2
+        self.e_hat = num_ / tot
+        self.e_sd = np.sqrt(1 / tot)
+        self.g = [{j: v / tot[i] for j, v in gi.items()} for i, gi in enumerate(self.g)]
         self.ncells = len(cells)
         return self
 
@@ -271,16 +283,14 @@ class Model:
         rng = np.random.default_rng(seed)
         ns, nr, nt = len(self.si), len(self.ri), len(TYPES)
         L = np.linalg.cholesky(self.cov + 1e-12 * np.eye(self.npar))
-        draw = self.theta[None, :] + rng.standard_normal((K, self.npar)) @ L.T
+        dev = rng.standard_normal((K, self.npar)) @ L.T  # θ_draw - θ̂
+        draw = self.theta[None, :] + dev
 
         R = self.races
         f_race = 1 - np.clip(R.eevp.values / 100, 0, 1)
-        exp_by_state = R.groupby("state").expected.sum()
-        cnt_by_state = R.groupby("state").counted.sum()
-        f_state = (1 - (cnt_by_state / exp_by_state.where(exp_by_state > 0, 1)).clip(0, 1)).to_dict()
         f_nat = 1 - min(R.counted.sum() / max(R.expected.sum(), 1), 1)
         g_race, g_nat = shock_curve(f_race), shock_curve(f_nat)
-        g_state = np.array([shock_curve(f_state.get(s, 1)) for s in self.states])
+        g_state = shock_curve(self.f_state)
 
         nat_shock = rng.standard_normal(K) * SHOCK["nat"] * g_nat
         st_shock = rng.standard_normal((K, ns)) * SHOCK["state"] * g_state
@@ -289,34 +299,37 @@ class Model:
         untyped_shock = rng.standard_normal((K, ns)) * SHOCK["untyped"]
         turn_st = np.exp(rng.standard_normal((K, ns)) * SHOCK["turnout"] * 0.5)
 
-        Bsim = np.zeros((K, nr))
-        Asim = np.zeros((K, nr))
+        Xs, Ys, Os = np.zeros((K, nr)), np.zeros((K, nr)), np.zeros((K, nr))
         self.unit_proj = np.full(len(self.u), np.nan)
         for i, u in self.u.iterrows():
             ri, race = self.ri[u.race_id], R.loc[u.race_id]
-            if race.same_party:
+            if race.fixed:
                 continue
             si = self.si[race.state]
-            B = self._B(u, race.side)
-            Bsim[:, ri] += B
-            Asim[:, ri] += u.R
+            other = max(u.total - u.X - u.Y, 0)
+            Xs[:, ri] += u.X
+            Ys[:, ri] += u.Y
+            Os[:, ri] += other
             e_u = self.e_hat[i] + rng.standard_normal(K) * self.e_sd[i]
+            if self.g[i]:
+                js = list(self.g[i])
+                e_u = e_u - dev[:, js] @ np.array([self.g[i][j] for j in js])
             base = (logit(u.b) + race.rho0 + draw[:, 0] + nat_shock
                     + draw[:, self.o_state + si] + st_shock[:, si]
                     + draw[:, self.o_race + ri] + race_shock[:, ri] + e_u)
-            exp_t = np.array([u[f"exp_{t}"] for t in TYPES])
-            got_t = np.array([u[f"{race.side}_{t}"] + u[f"R_{t}"] + u[f"O_{t}"] for t in TYPES])
-            if exp_t.sum() > 0:
-                rem = np.maximum(exp_t - got_t, 0)
-                parts = [(rem[t], self.o_type + si * nt + t) for t in range(nt) if rem[t] > 0]
+            # votos que faltan: el total esperado manda; el desglose por tipo sólo reparte
+            rem_total = max(u.expected - u.total, 0)
+            rem_t = np.array([max(u[f"exp_{t}"] - u[f"T_{t}"], 0) for t in TYPES])
+            if rem_t.sum() > 0 and rem_total > 0:
+                rem_t = rem_t * rem_total / rem_t.sum()
+                parts = [(rem_t[t], self.o_type + si * nt + t) for t in range(nt) if rem_t[t] > 0]
             else:
-                parts = [(max(u.expected - u.total, 0), None)]
-            other = u.total - B - u.R
+                parts = [(rem_total, None)]
             share_o = other / u.total if u.total > 0 else 0.02
             fu = 1 - min(u.eevp / 100, 1)
             unit_noise = rng.standard_normal(K) * SHOCK["unit"] * shock_curve(fu) * np.sqrt(1 - self.wu[i])
             tn = turn_st[:, si] * np.exp(rng.standard_normal(K) * SHOCK["turnout"] * 0.5)
-            proj_b, proj_n = B, B + u.R
+            proj_x, proj_n = u.X, u.X + u.Y
             for n, j in parts:
                 if n <= 0:
                     continue
@@ -326,54 +339,73 @@ class Model:
                     x = base + unit_noise + untyped_shock[:, si] * shock_curve(fu)
                 p = expit(x)
                 two = n * (1 - share_o) * tn
-                Bsim[:, ri] += two * p
-                Asim[:, ri] += two * (1 - p)
-                proj_b += float(np.median(two * p)); proj_n += float(np.median(two))
-            self.unit_proj[i] = proj_b / proj_n if proj_n > 0 else np.nan
+                Xs[:, ri] += two * p
+                Ys[:, ri] += two * (1 - p)
+                Os[:, ri] += n * share_o * tn
+                proj_x += float(np.median(two * p)); proj_n += float(np.median(two))
+            self.unit_proj[i] = proj_x / proj_n if proj_n > 0 else np.nan
 
-        share = Bsim / np.maximum(Bsim + Asim, 1)
-        win_B = share > 0.5
+        share = Xs / np.maximum(Xs + Ys, 1)
+        win_X = share > 0.5
+        # umbral de mayoría (GA, VT gob., LA): si nadie llega al 50% del total hay balotaje.
+        # El voto preferencial (AK, ME) ya se decide entre los dos finalistas: sin balotaje.
+        tot = np.maximum(Xs + Ys + Os, 1)
+        runoff = np.zeros((K, nr), dtype=bool)
         for rid, race in R.iterrows():
             ri = self.ri[rid]
-            if race.same_party:
-                win_B[:, ri] = race.parties[0] != "R"
-            elif race.winner:
-                win_B[:, ri] = race.winner[0] != "R"
-        self.share, self.win_B = share, win_B
+            if race.fixed:
+                win_X[:, ri] = True
+                share[:, ri] = np.nan
+            elif race.called:
+                win_X[:, ri] = race.called == "X"
+            elif race.threshold and race.tabulation != "ranked-choice":
+                lead = np.maximum(Xs[:, ri], Ys[:, ri]) / tot[:, ri]
+                runoff[:, ri] = lead * 100 < race.threshold
+        self.share, self.win_X, self.runoff = share, win_X, runoff
         return self
 
     # ------------------------------------------------------------ salidas
+    def _caucus_wins(self, idx):
+        R = self.races.iloc[idx]
+        w = self.win_X[:, idx]
+        xc, yc = R.x_caucus.values, R.y_caucus.values
+        seat = np.where(w, xc[None, :], yc[None, :])
+        return seat
+
     def summary(self, control):
         R = self.races
-        q = lambda a, p: float(np.quantile(a, p))
+        q = lambda a, p: float(np.nanquantile(a, p))
         races = []
         for rid, race in R.iterrows():
             ri = self.ri[rid]
-            g = self.u[self.u.race_id == rid]
-            Bc = float(g.D.sum() if race.side == "D" else g.O.sum())
-            Ac = float(g.R.sum())
+            X, Y = race.X, race.Y
             s = self.share[:, ri]
+            proj = not race.fixed
             races.append(dict(
                 id=rid, office=race.office, state=race.state, seat=race.seat, rating=race.rating,
-                side=race.side, same_party=race.same_party, parties=race.parties, call=race.call,
-                winner=race.winner, eevp=race.eevp, counted=race.counted, expected=race.expected,
-                partial_B=round(100 * Bc / (Bc + Ac), 2) if Bc + Ac else None,
-                partial_R=round(100 * Ac / (Bc + Ac), 2) if Bc + Ac else None,
-                proj_B=round(100 * q(s, 0.5), 2), proj_R=round(100 * (1 - q(s, 0.5)), 2),
-                ci90_B=[round(100 * q(s, 0.05), 2), round(100 * q(s, 0.95), 2)],
-                ci90_R=[round(100 * (1 - q(s, 0.95)), 2), round(100 * (1 - q(s, 0.05)), 2)],
-                p_B_win=round(float(self.win_B[:, ri].mean()), 4),
-                runoff_risk=bool(race.state == "GA" and race.office in ("S", "G")),
+                x_name=race.x_name, y_name=race.y_name, x_party=race.x_party, y_party=race.y_party,
+                x_caucus=race.x_caucus, y_caucus=race.y_caucus,
+                side="D" if race.x_party == "D" else "O", same_party=bool(race.fixed),
+                call=race.call, winner=race.called, eevp=race.eevp, counted=race.counted,
+                expected=race.expected, tabulation=race.tabulation,
+                partial_B=round(100 * X / (X + Y), 2) if X + Y else None,
+                partial_R=round(100 * Y / (X + Y), 2) if X + Y else None,
+                proj_B=round(100 * q(s, 0.5), 2) if proj else None,
+                proj_R=round(100 * (1 - q(s, 0.5)), 2) if proj else None,
+                ci90_B=[round(100 * q(s, 0.05), 2), round(100 * q(s, 0.95), 2)] if proj else None,
+                ci90_R=[round(100 * (1 - q(s, 0.95)), 2), round(100 * (1 - q(s, 0.05)), 2)] if proj else None,
+                p_B_win=round(float(self.win_X[:, ri].mean()), 4),
+                p_runoff=round(float(self.runoff[:, ri].mean()), 4),
+                runoff_risk=bool(race.threshold and race.tabulation != "ranked-choice"),
             ))
         out = dict(races=races, chambers={})
         for off, ctl in control.items():
             idx = [self.ri[r] for r in R.index if R.loc[r, "office"] == off]
             if not idx:
                 continue
-            sideD = np.array([R.iloc[i].side == "D" for i in idx])
-            wins = self.win_B[:, idx]
-            D = ctl["D_hold"] + (wins & sideD).sum(1)
-            I = ctl.get("I_hold", 0) + (wins & ~sideD).sum(1)
+            seat = self._caucus_wins(idx)
+            D = ctl["D_hold"] + (seat == "D").sum(1)
+            I = ctl.get("I_hold", 0) + (seat == "I").sum(1)
             Rr = ctl["total"] - D - I
             vals, cnt = np.unique(D, return_counts=True)
             out["chambers"][off] = dict(
@@ -390,11 +422,9 @@ class Model:
         g = self.u.assign(proj=self.unit_proj)
         out = {}
         for rid, gg in g.groupby("race_id"):
-            side = self.races.loc[rid, "side"]
             m = {}
             for _, r in gg.iterrows():
-                B = r.D if side == "D" else r.O
-                part = B / (B + r.R) if B + r.R > 0 else None
+                part = r.X / (r.X + r.Y) if r.X + r.Y > 0 else None
                 m[r.unit_id] = dict(
                     f=r.fips, n=r["name"], e=r.eevp,
                     p=None if part is None else round(100 * part, 1),

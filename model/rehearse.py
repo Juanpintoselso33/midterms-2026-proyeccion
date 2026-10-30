@@ -29,34 +29,34 @@ CLOSE = {"IN": 0, "KY": 0, "VT": 0, "VA": 0, "GA": 0, "SC": 0, "FL": 0.5, "OH": 
 
 
 def synth(df, t, rng_state, bias):
-    """Units a la hora t (0..10 h desde las 19 ET)."""
+    """Units a la hora t (0..10 h desde las 19 ET). Al terminar el conteo coincide con el real."""
     tau, dur, beta, noise = rng_state
     d = df.copy()
     f = np.clip((t - tau) / dur, 0, 1)
-    final_B = d.D.values.astype(float)
-    final_R = d.R.values.astype(float)
-    final_O = d.O.values.astype(float)
-    tot2 = final_B + final_R
-    y = np.divide(final_B, tot2, out=np.full_like(tot2, 0.5), where=tot2 > 0)
-    yc = np.clip(y + beta * (1 - f), 0.01, 0.99)
-    c2 = tot2 * f
-    d["D"] = np.round(c2 * yc)
-    d["R"] = np.round(c2 * (1 - yc))
-    d["O"] = np.round(final_O * f)
-    d["total"] = d.D + d.R + d.O
+    X, Y = d.X.values.astype(float), d.Y.values.astype(float)
+    Z = np.maximum(d.total.values.astype(float) - X - Y, 0)
+    two = X + Y
+    y = np.divide(X, two, out=np.full_like(two, 0.5), where=two > 0)
+    # sesgo que se desvanece en los extremos (0 o 100%) y al completar el conteo
+    yc = y + beta * (1 - f) * 4 * y * (1 - y)
+    c2 = two * f
+    d["X"] = np.round(c2 * yc)
+    d["Y"] = np.round(c2) - d["X"]
+    d["total"] = d.X + d.Y + np.round(Z * f)
     d["expected"] = np.round(d.expected * noise)
     d["eevp"] = np.where(d.expected > 0, np.minimum(100 * d.total / d.expected, 99), 0)
     d["call"] = "too_early"
-    d["winner"] = ""
-    for c in [c for c in d.columns if any(c.endswith(x) for x in P.TYPES)]:
+    d["winner_ids"] = ""
+    for c in [c for c in d.columns if any(c.endswith("_" + x) for x in P.TYPES) and c[0] in "XYT"]:
         d[c] = 0
     return d
 
 
 def rebuild_state_rows(d):
-    """Reagrega la fila estatal de cada carrera a partir de sus unidades."""
-    sub = d[~d.level.isin(["state", "national"])]
-    agg = sub.groupby("race_id")[["D", "R", "O", "total", "expected"]].sum()
+    """Reagrega la fila estatal de cada carrera con el mismo nivel que usa el modelo."""
+    chosen = P.pick_units(d)
+    chosen = chosen[~chosen.level.isin(["state", "resto"])]
+    agg = chosen.groupby("race_id")[["X", "Y", "total", "expected"]].sum()
     st = d.level == "state"
     for c in agg.columns:
         d.loc[st, c] = d.loc[st, "race_id"].map(agg[c]).fillna(d.loc[st, c])
@@ -86,8 +86,8 @@ def main():
     truth = {}
     for rid, g in df[df.level == "state"].groupby("race_id"):
         r = g.iloc[0]
-        B = max(r.D, r.O) if "O" in str(r.parties) else r.D
-        truth[rid] = B / (B + r.R)
+        if r.X + r.Y > 0 and r.y_id:
+            truth[rid] = r.X / (r.X + r.Y)
 
     rows = []
     hours = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]
@@ -107,7 +107,7 @@ def main():
             (dd / "units.json").write_text(json.dumps(m.map_units(), separators=(",", ":")))
         res = []
         for r in s["races"]:
-            if r["same_party"] or r["id"] not in truth:
+            if r["same_party"] or r["id"] not in truth or r["proj_B"] is None:
                 continue
             y = 100 * truth[r["id"]]
             res.append(dict(
