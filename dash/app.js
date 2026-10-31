@@ -6,6 +6,11 @@
 var Q = new URLSearchParams(location.search);
 var SRC = (Q.get('src') || '').replace(/[^a-z0-9_-]/gi, '');
 var BASE = SRC ? './' + SRC + '/' : './';
+/* Los datos en vivo se publican en la rama `datos` y se leen por raw.githubusercontent.com
+   (caché de 5 min, sin cola de builds de Pages). La copia de Pages queda de respaldo: se usa
+   la que tenga la hora de actualización más nueva. */
+var RAW = 'https://raw.githubusercontent.com/Juanpintoselso33/midterms-2026-proyeccion/datos/';
+var BASES = SRC ? [BASE] : [RAW, BASE];
 var REFRESH_MS = 30000;
 var $ = function (s, el) { return (el || document).querySelector(s); };
 
@@ -124,8 +129,8 @@ function isCompetitive(r) {
 
 /* ---------- carga ---------- */
 function bust(u) { return u + (u.indexOf('?') < 0 ? '?' : '&') + '_=' + Date.now(); }
-function getJSON(name, optional) {
-  return fetch(bust(BASE + name), {cache:'no-store'}).then(function (r) {
+function getJSON(name, optional, base) {
+  return fetch(bust((base || BASE) + name), {cache:'no-store'}).then(function (r) {
     if (!r.ok) { if (optional) return null; throw new Error(name + ' → HTTP ' + r.status); }
     return r.json();
   });
@@ -135,7 +140,16 @@ function getGeo(name) { return fetch('./geo/' + name + '.json').then(function (r
 function load() {
   if (loading) return Promise.resolve();
   loading = true;
-  return Promise.all([getJSON('data.json'), getJSON('units.json', true), getJSON('history.json', true)]).then(function (res) {
+  var src;
+  return Promise.all(BASES.map(function (b) {
+    return getJSON('data.json', false, b).then(function (d) { return {b: b, d: d}; }, function (e) { return {e: e}; });
+  })).then(function (got) {
+    var ok = got.filter(function (g) { return g.d; });
+    if (!ok.length) throw got[0].e;
+    ok.sort(function (a, b) { return String(b.d.updated || '') < String(a.d.updated || '') ? -1 : 1; });
+    src = ok[0];
+    return Promise.all([src.d, getJSON('units.json', true, src.b), getJSON('history.json', true, src.b)]);
+  }).then(function (res) {
     DATA = res[0]; UNITS = res[1] || {}; HIST = Array.isArray(res[2]) ? res[2] : [];
     lastOk = Date.now(); lastUpdated = DATA.updated || '';
     $('#errbox').textContent = '';

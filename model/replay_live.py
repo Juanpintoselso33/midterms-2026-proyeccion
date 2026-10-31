@@ -74,7 +74,7 @@ def main():
         bar.log(f"{hh % 24:02d}:{mm:02d} ET · Senado P(D)={S['p_D']:.2f} D={S['D_med']} · celdas {m.ncells}")
         if not a.no_push and (time.time() - last_push >= a.push or k == n - 1):
             bar.status("publicando")
-            bar.log(f"publicación: {live.publish('ensayo ' + clock[15:20])}")
+            bar.log(f"publicación: {live.publish('ensayo ' + clock[15:20], live.DATOS, 'datos', live.DATA_FILES)}")
             last_push = time.time()
         time.sleep(max(1, a.every - (time.time() - t0)))
     bar.close()
