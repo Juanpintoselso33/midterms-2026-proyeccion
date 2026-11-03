@@ -49,6 +49,36 @@ SD = dict(nat=0.08, state=0.06, type=0.15, unit=0.12, floor=0.02, bias=0.16)
 # que falta cuando el feed no dice de qué tipo de voto es lo pendiente (correo tardío, etc.).
 SHOCK = dict(nat=0.06, state=0.08, race=0.06, unit=0.10, turnout=0.08, type=0.10, untyped=0.22)
 K = 2000
+# Voto presidencial 2024, proporción bipartidaria D (Harris 48,3 – Trump 49,8): referencia para
+# trasladar la encuesta nacional al resultado presidencial de cada distrito.
+PRES24_D = 48.3 / (48.3 + 49.8)
+POLL_SD = ((10, 0.09), (3, 0.11), (0, 0.14))  # cantidad de encuestas -> sd del prior (logit)
+
+
+def load_polls(path=None):
+    """Prior desde encuestas (research/previa_encuestas.json): por carrera de Senado/gobernación
+    la proporción bipartidaria del candidato no republicano, y el desvío nacional en logit.
+    En cada estado manda el promedio con más encuestas; una encuesta suelta, sólo si no hay otro."""
+    path = Path(path or ROOT / "research" / "previa_encuestas.json")
+    if not path.exists():
+        return None
+    d = json.loads(path.read_text())
+    races = {}
+    for r in d.get("races", []):
+        ind = r.get("other") is not None and (r.get("D") is None or r["other"] > r["D"])
+        x, name = (r["other"], r.get("other_name")) if ind else (r.get("D"), r.get("D_name"))
+        if x is None or not r.get("R"):
+            continue
+        k, n = (r["state"], r["office"]), r.get("n_polls") or 5
+        if k in races and races[k]["n"] >= n:
+            continue
+        races[k] = dict(p=x / (x + r["R"]), n=n, name=str(name or "").lower(), sd=next(sd for lim, sd in POLL_SD if n >= lim))
+    gb = [g["D"] / (g["D"] + g["R"]) for g in d.get("generic_ballot", []) if g.get("D") and g.get("R")]
+    swing = float(logit(np.mean(gb)) - logit(PRES24_D)) if gb else 0.0
+    return dict(races=races, swing=swing)
+
+
+POLLS = None  # se carga en main() sólo para la elección de 2026; el ensayo de 2024 no lo usa
 
 
 def logit(p):
@@ -174,7 +204,12 @@ class Model:
             bbar = float(np.average(g.b, weights=w))
             rating = str(t.rating)
             lo, hi, sd = RATING.get(rating, (0.0, 1.0, 0.20))
-            if rating.split("-")[0] in ("tossup", "tilt", "lean"):
+            poll = POLLS["races"].get((t.state, t.office)) if POLLS and t.office in ("S", "G") else None
+            if poll and xp != "R" and str(t.x_name).lower() in poll["name"]:
+                p0, sd = poll["p"], poll["sd"]
+            elif POLLS:
+                p0 = float(np.clip(expit(logit(bbar) + POLLS["swing"]), lo, hi))
+            elif rating.split("-")[0] in ("tossup", "tilt", "lean"):
                 p0 = (lo + hi) / 2
             else:
                 p0 = float(np.clip(bbar, lo, hi))
@@ -455,6 +490,8 @@ def main():
     ap.add_argument("--out", default=str(ROOT / "dash"))
     a = ap.parse_args()
     t0 = datetime.now()
+    global POLLS
+    POLLS = load_polls() if a.date.startswith("2026") else None
     m = Model(load(a.date)).fit().simulate()
     s = m.summary(control_from_raw(a.date))
     s["updated"] = t0.strftime("%Y-%m-%d %H:%M:%S")

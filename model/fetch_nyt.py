@@ -25,6 +25,20 @@ UA = {"User-Agent": "Mozilla/5.0 (proyeccion personal midterms 2026)"}
 TYPES = ("advance", "absentee_mail", "election_day_in_person", "provisional")
 THREADS = 4
 
+def poll_leaders():
+    """(estado, cargo) -> apellido del independiente que encabeza las encuestas frente al
+    republicano (p. ej. Osborn en Nebraska). Sólo se usa para elegir el rival antes de que haya votos."""
+    p = ROOT / "research" / "previa_encuestas.json"
+    if not p.exists():
+        return {}
+    out = {}
+    for r in json.loads(p.read_text()).get("races", []):
+        if r.get("other") is not None and (r.get("D") is None or r["other"] > r["D"]) and r.get("other_name"):
+            out[(r["state"], r["office"])] = r["other_name"].split(" (")[0].split()[-1].lower()
+    return out
+
+
+PREFER = poll_leaders()
 session = requests.Session()
 session.headers.update(UA)
 etags = {}
@@ -89,12 +103,15 @@ def caucus_of(meta):
 def main_pair(r):
     """Los dos candidatos que se modelan: X = principal no republicano, Y = principal rival
     (el republicano con más votos; si no hay republicano, el siguiente más votado).
-    Sin votos todavía: demócrata > incumbente > orden en la boleta."""
+    Sin votos todavía: el independiente que lideran las encuestas > demócrata > incumbente >
+    orden en la boleta."""
     meta = r.get("candidate_metadata") or {}
     top = r.get("top_reporting_unit") or (r.get("reporting_units") or [{}])[0]
     votes = {c["nyt_id"]: (c.get("votes") or {}).get("total") or 0 for c in top.get("candidates", [])}
     ids = list(meta) or list(votes)
-    rank = lambda i: (votes.get(i, 0), party_of(meta.get(i)) == "D", bool((meta.get(i) or {}).get("incumbent")),
+    pref = PREFER.get((top.get("state_postal"), r.get("office_id")), "\0")
+    rank = lambda i: (votes.get(i, 0), ((meta.get(i) or {}).get("last_name") or "").lower() == pref,
+                      party_of(meta.get(i)) == "D", bool((meta.get(i) or {}).get("incumbent")),
                       -((meta.get(i) or {}).get("ballot_order") or 99))
     non_r = sorted([i for i in ids if party_of(meta.get(i)) != "R"], key=rank, reverse=True)
     rep = sorted([i for i in ids if party_of(meta.get(i)) == "R"], key=rank, reverse=True)
