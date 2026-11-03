@@ -67,30 +67,36 @@ function ratingOf(k) { return RATINGS.filter(function (r) { return r[0] === k; }
 function rlabel(k) { var g = ratingOf(k); return g ? g[1] : (k || '—'); }
 function xname(r) { return r.x + (r.ind ? ' (Ind.)' : ''); }
 function fcRace(a) { return P.ours.races[a + '-' + FOFF]; }
-function fcExtra(a) { return (P.polls.race_forecasts || []).filter(function (f) { return f.state === a && f.office === FOFF; }); }
+var FSRC = [['Decision Desk HQ', 'DDHQ'], ['Polymarket', 'Polymarket'], ['Kalshi', 'Kalshi'], ['Cook Political Report', 'Cook'], ["Sabato's Crystal Ball", 'Sabato'], ['Inside Elections', 'Inside Elections']];
+function fshort(s) { var m = FSRC.filter(function (x) { return x[0] === s; })[0]; return m ? m[1] : s; }
+function fcExtra(a) {
+  var names = FSRC.map(function (x) { return x[0]; });
+  return (P.polls.race_forecasts || []).filter(function (f) { return f.state === a && f.office === FOFF && names.indexOf(f.source) >= 0; })
+    .sort(function (x, y) { return names.indexOf(x.source) - names.indexOf(y.source); });
+}
 function fcStyle(f) {
   var r = fcRace(f.properties.a), g = r && ratingOf(r.rating);
   if (!r) return {fillColor: naColor(), fillOpacity: 0.45, color: css('--card'), weight: 1};
   return {fillColor: g ? divColor(g[2]) : divColor(2 * (r.p_D - 0.5)), fillOpacity: 1, color: css('--card'), weight: 1};
 }
-function probRow(lbl, pd) {
-  return '<div class="row"><span>' + esc(lbl) + '</span><b><span class="dd">D/I ' + pc(pd) + '</span> · <span class="rr">R ' + pc(pd == null ? null : 1 - pd) + '</span></b></div>';
+function probRow(lbl, pd, pr) {
+  if (pr == null && pd != null) pr = 1 - pd;
+  return '<div class="row"><span>' + esc(lbl) + '</span><b><span class="dd">D/I ' + pc(pd) + '</span> · <span class="rr">R ' + pc(pr) + '</span></b></div>';
 }
 function fcTip(a) {
   var r = fcRace(a), n = '<b>' + esc(STATE_NAMES[a] || a) + '</b>';
   if (!r) return n + '<div class="m">sin elección</div>';
   return n + '<div class="row"><span class="dd">' + esc(xname(r)) + '</span><span class="rr">' + esc(r.y) + '</span></div>' +
     '<div class="row"><span>Calificación (NYT)</span><b>' + (r.rating ? rlabel(r.rating) : 'sin calificación') + '</b></div>' +
-    fcExtra(a).map(function (f) { return f.p_D != null ? probRow(f.source, f.p_D) : '<div class="row"><span>' + esc(f.source) + '</span><b>' + esc(rlabel(f.rating)) + '</b></div>'; }).join('') +
+    fcExtra(a).map(function (f) { return f.p_D != null ? probRow(fshort(f.source), f.p_D, f.p_R) : '<div class="row"><span>' + esc(fshort(f.source)) + '</span><b>' + esc(rlabel(f.rating)) + '</b></div>'; }).join('') +
     probRow('Este tablero', r.p_D);
 }
 function renderFcRaces() {
   var rs = Object.keys(P.ours.races).map(function (k) { var r = P.ours.races[k]; r.k = k; return r; }).filter(function (r) { return r.k.slice(3) === FOFF; });
   rs.sort(function (a, b) { return Math.abs(a.p_D - 0.5) - Math.abs(b.p_D - 0.5); });
-  var srcs = [];
-  (P.polls.race_forecasts || []).forEach(function (f) { if (f.office === FOFF && srcs.indexOf(f.source) < 0) srcs.push(f.source); });
-  function cellP(pd) { return pd == null ? '<span class="m">—</span>' : '<div class="sv"><span class="dd">D/I ' + pc(pd) + '</span><span class="rr">R ' + pc(1 - pd) + '</span></div>' + split(pd, 1 - pd); }
-  $('#frT').innerHTML = '<thead><tr><th>Estado</th><th>Candidatos</th><th>Calificación (NYT)</th>' + srcs.map(function (s) { return '<th>' + esc(s) + '</th>'; }).join('') + '<th>Este tablero</th></tr></thead><tbody>' +
+  var srcs = FSRC.map(function (x) { return x[0]; }).filter(function (s) { return (P.polls.race_forecasts || []).some(function (f) { return f.source === s && f.office === FOFF; }); });
+  function cellP(pd, pr) { if (pr == null && pd != null) pr = 1 - pd; return pd == null ? '<span class="m">—</span>' : '<div class="sv"><span class="dd">D/I ' + pc(pd) + '</span><span class="rr">R ' + pc(pr) + '</span></div>' + split(pd, pr); }
+  $('#frT').innerHTML = '<thead><tr><th>Estado</th><th>Candidatos</th><th>Calificación (NYT)</th>' + srcs.map(function (s) { return '<th>' + esc(fshort(s)) + '</th>'; }).join('') + '<th>Este tablero</th></tr></thead><tbody>' +
     rs.map(function (r) {
       var a = r.k.slice(0, 2), g = ratingOf(r.rating), ex = fcExtra(a);
       return '<tr><td data-l="Estado" class="full"><b>' + esc(STATE_NAMES[a] || a) + '</b></td>' +
@@ -98,11 +104,11 @@ function renderFcRaces() {
         '<td data-l="Calificación (NYT)">' + (g ? '<span class="' + (g[2] > 0 ? 'dd' : g[2] < 0 ? 'rr' : '') + '">' + g[1] + '</span>' : '<span class="m">—</span>') + '</td>' +
         srcs.map(function (s) {
           var f = ex.filter(function (x) { return x.source === s; })[0];
-          return '<td data-l="' + esc(s) + '">' + (!f ? '<span class="m">—</span>' : f.p_D != null ? cellP(f.p_D) : esc(rlabel(f.rating))) + '</td>';
+          return '<td data-l="' + esc(fshort(s)) + '">' + (!f ? '<span class="m">—</span>' : f.p_D != null ? cellP(f.p_D, f.p_R) : esc(rlabel(f.rating))) + '</td>';
         }).join('') +
         '<td data-l="Este tablero">' + cellP(r.p_D) + '</td></tr>';
     }).join('') + '</tbody>';
-  $('#frNote').textContent = 'Calificación: la que publica el NYT junto con los resultados. Las demás columnas, cuando hay, son probabilidades o calificaciones públicas de cada pronosticador, con su fuente. “Este tablero” es la probabilidad del modelo propio antes del conteo, que parte de las encuestas. Orden: carreras más parejas primero.';
+  $('#frNote').textContent = 'Calificación: la que publica el NYT junto con los resultados. DDHQ es el modelo de Decision Desk HQ; Polymarket y Kalshi son precios de mercados de apuestas (no encuestas), leídos hoy; Cook, Sabato e Inside Elections publican calificaciones, no probabilidades (tomadas de las tablas de Wikipedia). Donde el rival del republicano es un independiente, D/I es el independiente. “Este tablero” es la probabilidad del modelo propio antes del conteo, que parte de las encuestas. Orden: carreras más parejas primero.';
   if (MAPS.fmap) MAPS.fmap.layer.setStyle(fcStyle);
 }
 
