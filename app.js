@@ -242,9 +242,9 @@ function renderChambers() {
     var name = off === 'S' ? 'Senado' : 'Cámara de Representantes';
     var rest = Math.max(0, 1 - c.p_D - c.p_R);
         $('.chtxt', el).innerHTML =
-      '<h2>' + name + '</h2><p class="need">' + c.total + ' bancas · mayoría: D/Ind. ' + c.D_needs + ' · R ' + c.R_needs + '</p>' +
+      '<h2>' + name + '</h2><p class="need">' + c.total + ' bancas · mayoría: D ' + c.D_needs + ' · R ' + c.R_needs + '</p>' +
       '<div class="duo">' +
-        '<div class="side d"><div class="pname">Demócratas / Ind.</div><div class="big num">' + bigP(c.p_D) + '</div><div class="sub2">probabilidad de controlar</div>' +
+        '<div class="side d"><div class="pname">Demócratas</div><div class="big num">' + bigP(c.p_D) + '</div><div class="sub2">probabilidad de controlar</div>' +
           '<div class="med"><b class="num">' + c.D_med + '</b> bancas' + '<span>rango 90 %: ' + c.D_ci90[0] + '–' + c.D_ci90[1] + '</span></div></div>' +
         '<div class="side rr r"><div class="pname">Republicanos</div><div class="big num">' + bigP(c.p_R) + '</div><div class="sub2">probabilidad de controlar</div>' +
           '<div class="med"><b class="num">' + c.R_med + '</b> bancas' + '<span>rango 90 %: ' + c.R_ci90[0] + '–' + c.R_ci90[1] + '</span></div></div>' +
@@ -284,7 +284,7 @@ var threshPlugin = {
     ctx.beginPath(); ctx.moveTo(px, area.top); ctx.lineTo(px, area.bottom); ctx.stroke(); ctx.setLineDash([]);
     ctx.font = '600 11px ' + Chart.defaults.font.family; ctx.textBaseline = 'top';
     ctx.fillStyle = css('--r'); ctx.textAlign = 'right'; ctx.fillText('Mayoría R ◂', px - 6, area.top + 2);
-    ctx.fillStyle = css('--d'); ctx.textAlign = 'left'; ctx.fillText('▸ Mayoría D/Ind. (≥ ' + o.need + ')', px + 6, area.top + 2);
+    ctx.fillStyle = css('--d'); ctx.textAlign = 'left'; ctx.fillText('▸ Mayoría D (≥ ' + o.need + ')', px + 6, area.top + 2);
     ctx.restore();
   }
 };
@@ -318,7 +318,7 @@ function drawHist(off, c, canvas) {
         }
       },
       scales: {
-        x: {grid: {display: false}, ticks: {maxTicksLimit: 10, autoSkip: true, maxRotation: 0}, title: {display: true, text: 'Bancas demócratas (las republicanas son el resto)', color: css('--mut')}},
+        x: {grid: {display: false}, ticks: {maxTicksLimit: 10, autoSkip: true, maxRotation: 0}, title: {display: true, text: 'Bancas demócratas (republicanas: el resto, menos los independientes)', color: css('--mut')}},
         y: {beginAtZero: true, grid: {color: css('--line2')}, ticks: {callback: function (v) { return v + ' %'; }, maxTicksLimit: 4}}
       }
     }
@@ -363,7 +363,7 @@ function evoConfig() {
           filter: function (it) { return p || it.dataset.label === 'D' || it.dataset.label === 'R'; },
           callbacks: {
             label: function (it) {
-              var h = pts[it.dataIndex][ch], isD = it.dataset.label === 'D', who = isD ? 'D/Ind.' : 'R';
+              var h = pts[it.dataIndex][ch], isD = it.dataset.label === 'D', who = isD ? 'D' : 'R';
               if (p) return who + ': ' + fprob(isD ? h.p_D : h.p_R);
               return who + ': ' + (isD ? h.D_med : h.R_med) + ' bancas (rango 90 %: ' + (isD ? h.D_ci90 : h.R_ci90).join('–') + ')';
             }
@@ -383,7 +383,7 @@ function renderEvo() {
   var cfg = evoConfig(), ch = CH.evo;
   var c = DATA.chambers && DATA.chambers[UI.evoCh];
   $('#evoNote').textContent = (HIST.length ? HIST.length + (HIST.length === 1 ? ' corrida del modelo' : ' corridas del modelo') : 'Todavía no hay historial: el gráfico se va a llenar con las próximas corridas') +
-    (c ? ' · mayoría: D/Ind. ' + c.D_needs + ' bancas, R ' + c.R_needs + '.' : '.');
+    (c ? ' · mayoría: D ' + c.D_needs + ' bancas, R ' + c.R_needs + '.' : '.');
   if (ch && ch._sig === UI.evoCh + UI.evoMet) {
     ch.data = cfg.data; ch.options.scales = cfg.options.scales; ch.update('none'); return;
   }
@@ -508,7 +508,7 @@ function legendHTML(m) {
   var M = METRICS[m];
   if (M.kind === 'seq') return '<span>0 %</span><div class="gr" style="background:' + gradient('seq') + '"></div><span>100 % contado</span><span class="na"><i style="background:' + naColor() + '"></i>sin dato</span>';
   var lo = 50 - M.span, hi = 50 + M.span;
-  return '<span class="r"><b>' + lo + (m === 'prob' ? ' %' : ' %') + '</b> R</span><div class="gr" style="background:' + gradient('div') + '"></div><span class="d">D/Ind. <b>' + hi + ' %</b></span><span class="na"><i style="background:' + naColor() + '"></i>sin dato / sin elección</span>';
+  return '<span class="r"><b>' + lo + (m === 'prob' ? ' %' : ' %') + '</b> R</span><div class="gr" style="background:' + gradient('div') + '"></div><span class="d">D/Ind. <b>' + hi + ' %</b></span><span class="na"><i style="background:linear-gradient(90deg,' + divColor(1) + ' 50%,' + divColor(-1) + ' 50%);opacity:.45"></i>sin disputa entre partidos</span><span class="na"><i style="background:' + naColor() + '"></i>sin dato / sin elección</span>';
 }
 function mkMap(el, interactive) {
   var m = L.map(el, {crs: L.CRS.Simple, zoomSnap: 0.25, zoomDelta: 0.5, attributionControl: false, minZoom: -8, maxZoom: 6,
@@ -530,14 +530,21 @@ function primaryOf(rs) {
   if (!rs.length) return null;
   return rs.slice().sort(function (a, b) { return compKey(a) - compKey(b); })[0];
 }
+/* Banca sin disputa entre partidos (sin rival, o D contra D / R contra R): color del partido que
+   ya la tiene, más claro; cuenta para el control aunque no haya carrera. */
+function settledStyle(r, m, w) {
+  if (!r || !r.same_party || m === 'cnt') return null;
+  return {fillColor: divColor(r.x_caucus === 'D' ? 1 : r.x_caucus === 'R' ? -1 : 0), fillOpacity: 0.45, color: strokeColor(), weight: w};
+}
 function styleState(f) {
   var a = f.properties.a, rs = stateRaces(a);
   if (!rs.length) return {fillColor: naColor(), fillOpacity: 0.35, color: strokeColor(), weight: 1};
-  return {fillColor: colorFor(UI.m1met, metricVal(primaryOf(rs), UI.m1met)), fillOpacity: 1, color: strokeColor(), weight: 1};
+  var p = primaryOf(rs);
+  return settledStyle(p, UI.m1met, 1) || {fillColor: colorFor(UI.m1met, metricVal(p, UI.m1met)), fillOpacity: 1, color: strokeColor(), weight: 1};
 }
 function styleDistrict(f) {
   var r = HMAP[f.properties.id];
-  return {fillColor: r ? colorFor(UI.m2met, metricVal(r, UI.m2met)) : naColor(), fillOpacity: r ? 1 : 0.3, color: strokeColor(), weight: 0.4};
+  return settledStyle(r, UI.m2met, 0.4) || {fillColor: r ? colorFor(UI.m2met, metricVal(r, UI.m2met)) : naColor(), fillOpacity: r ? 1 : 0.3, color: strokeColor(), weight: 0.4};
 }
 function fitMap(map, layer) {
   if (!map.getContainer().offsetWidth) return;  // pestaña oculta: se encuadra al mostrarla
