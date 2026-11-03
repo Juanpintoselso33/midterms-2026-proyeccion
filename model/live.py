@@ -21,8 +21,8 @@ import project as P  # noqa: E402
 ROOT = P.ROOT
 PAGES = ROOT.parent / "midterms-2026-pages"
 DATOS = ROOT.parent / "midterms-2026-datos"
-PUBLISH = ["index.html", "app.js", "style.css", "data.json", "units.json", "history.json", "lib", "geo"]
-DATA_FILES = ["data.json", "units.json", "history.json"]
+PUBLISH = ["index.html", "app.js", "style.css", "previa.html", "previa.js", "previa.css", "previa.json", "data.json", "units.json", "history.json", "lib", "geo"]
+DATA_FILES = ["data.json", "units.json", "history.json", "previa.json"]
 
 
 def publish(stamp, dest=PAGES, branch="gh-pages", names=PUBLISH):
