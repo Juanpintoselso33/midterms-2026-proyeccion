@@ -34,3 +34,6 @@ table.pt{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numer
   .pt .ra{text-align:left}
   .gb{grid-template-columns:1fr auto}.gb .bar{grid-column:1/-1;grid-row:2}
 }
+.navl a.on{background:rgba(255,255,255,.14);color:#fff}
+.tab .hero{padding-bottom:6px}
+.map{isolation:isolate;z-index:0}

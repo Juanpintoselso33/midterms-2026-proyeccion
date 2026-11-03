@@ -1,4 +1,4 @@
-/* Midterms 2026 — pestaña Previa: pronósticos, encuestas y voto anticipado. */
+/* Midterms 2026 — Previa: pestañas de pronósticos, encuestas y participación, con mapas. */
 (function () {
 'use strict';
 
@@ -71,15 +71,18 @@ function renderGeneric() {
 }
 
 /* ---------- encuestas por carrera ---------- */
-function renderRaces() {
-  var all = (P.polls.races || []).filter(function (r) { return r.office === OFF; }), g = {};
+function lead(r) { return r.other != null && (r.D == null || r.other > r.D) ? r.other : r.D; }
+function raceRows(off) {
+  var all = (P.polls.races || []).filter(function (r) { return r.office === off; }), g = {};
   all.forEach(function (r) {
     var k = r.state, cur = g[k];
     if (!cur) { g[k] = r; r.extra = []; return; }
     if (cur.n_polls === 1 && r.n_polls !== 1) { r.extra = cur.extra.concat([cur]); g[k] = r; } else cur.extra.push(r);
   });
-  var rs = Object.keys(g).map(function (k) { return g[k]; });
-  function lead(r) { return r.other != null && (r.D == null || r.other > r.D) ? r.other : r.D; }
+  return g;
+}
+function renderRaces() {
+  var g = raceRows(OFF), rs = Object.keys(g).map(function (k) { return g[k]; });
   rs.sort(function (a, b) { return Math.abs((lead(a) || 0) - (a.R || 0)) - Math.abs((lead(b) || 0) - (b.R || 0)); });
   $('#rcT').innerHTML = '<thead><tr><th>Estado</th><th>Demócrata / Ind.</th><th>Republicano</th><th></th><th class="ra">Margen</th><th>Este tablero</th><th>Fuente</th></tr></thead><tbody>' +
     (rs.length ? rs.map(function (r) {
@@ -97,8 +100,105 @@ function renderRaces() {
         (r.D != null && r.other != null ? '<div>' + (ind ? esc(r.D_name) + ' (D): ' + f1(r.D) : esc(r.other_name) + ' (Ind.): ' + f1(r.other)) + ' %</div>' : '') +
         r.extra.map(function (x) { return '<div>' + esc(x.source) + ': <span class="dd">' + f1(x.D != null ? x.D : x.other) + '</span> – <span class="rr">' + f1(x.R) + '</span>' + (x.date ? ' · ' + esc(x.date) : '') + '</div>'; }).join('') + '</td></tr>';
     }).join('') : '<tr><td colspan="7" class="m">Todavía no hay encuestas cargadas para estas carreras.</td></tr>') + '</tbody>';
+  restyle();
   $('#rcNote').textContent = 'Ordenadas de la más pareja a la menos. Las encuestas incluyen indecisos, por eso no suman 100; “Este tablero” es el reparto entre los dos principales antes del conteo.';
 }
+
+/* ---------- mapas ---------- */
+var PAL = {
+  light: {neu:[196,176,222], d:[[150,178,236],[37,86,196]], r:[[236,160,150],[196,47,38]], seq:[[232,236,242],[40,52,78]], na:[234,231,225]},
+  dark:  {neu:[120,98,158],  d:[[82,116,200],[130,170,255]],  r:[[170,80,72],[255,123,109]],  seq:[[40,48,64],[170,190,230]], na:[30,34,43]}
+};
+function isDark() { var t = document.documentElement.getAttribute('data-theme'); return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
+function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+function rgb(c) { return 'rgb(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ')'; }
+function pal() { return PAL[isDark() ? 'dark' : 'light']; }
+/* t en [-1,1]: positivo azul (D/Ind.), negativo rojo */
+function divColor(t) {
+  var Q = pal(); t = Math.max(-1, Math.min(1, t));
+  var c = t >= 0 ? Q.d : Q.r, a = Math.abs(t);
+  return rgb(a < 0.5 ? mix(Q.neu, c[0], a / 0.5) : mix(c[0], c[1], (a - 0.5) / 0.5));
+}
+function seqColor(t) { var Q = pal(); return rgb(mix(Q.seq[0], Q.seq[1], Math.max(0, Math.min(1, t)))); }
+function naColor() { return rgb(pal().na); }
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function grad(f) { var st = []; for (var i = 0; i <= 12; i++) st.push(f(i / 12)); return 'linear-gradient(90deg,' + st.join(',') + ')'; }
+
+var GEO = null, MAPS = {}, EMET = 'share', PSPAN = 15;
+var EMETS = {
+  share: {hint: 'Color: qué parte de los votos que AP espera hoy ya se emitió por anticipado.', lo: '0 %', hi: '100 %',
+    val: function (s) { return s.pct_exp == null ? null : s.pct_exp; }, color: function (v) { return seqColor(v); }},
+  grow: {hint: 'Color: cuántos votos espera AP hoy comparado con todos los votos de 2022.', lo: '−10 %', hi: '+40 %',
+    val: function (s) { return s.exp && s.turn22 ? s.exp / s.turn22 - 1 : null; }, color: function (v) { return seqColor((v + 0.1) / 0.5); }},
+  reg: {hint: 'Color: entre quienes ya votaron, diferencia entre registrados demócratas y republicanos. Sólo en los estados que publican el partido.', lo: 'R +30', hi: 'D +30',
+    val: function (s) { return s.party && s.voted ? (s.dem - s.rep) / s.voted : null; }, color: function (v) { return divColor(v / 0.3); }, div: true}
+};
+function stateOf(a) { return P.early.states.filter(function (s) { return s.st === a; })[0]; }
+function pollStyle(f) {
+  var r = raceRows(OFF)[f.properties.a];
+  if (!r) return {fillColor: naColor(), fillOpacity: 0.45, color: css('--card'), weight: 1};
+  return {fillColor: divColor(((lead(r) || 0) - (r.R || 0)) / PSPAN), fillOpacity: 1, color: css('--card'), weight: 1};
+}
+function earlyStyle(f) {
+  var s = stateOf(f.properties.a), M = EMETS[EMET], v = s ? M.val(s) : null;
+  return {fillColor: v == null ? naColor() : M.color(v), fillOpacity: v == null ? 0.45 : 1, color: css('--card'), weight: 1};
+}
+function pollTip(a) {
+  var r = raceRows(OFF)[a], n = '<b>' + esc(STATE_NAMES[a] || a) + '</b>';
+  if (!r) return n + '<div class="m">sin encuestas cargadas</div>';
+  var ind = r.other != null && (r.D == null || r.other > r.D);
+  return n + '<div class="row"><span class="dd">' + esc(ind ? r.other_name + ' (Ind.)' : r.D_name) + '</span><b>' + f1(lead(r)) + ' %</b></div>' +
+    '<div class="row"><span class="rr">' + esc(r.R_name) + '</span><b>' + f1(r.R) + ' %</b></div>' +
+    '<div class="m">' + margin(lead(r), r.R) + ' · ' + esc(r.source) + '</div>';
+}
+function earlyTip(a) {
+  var s = stateOf(a), n = '<b>' + esc(STATE_NAMES[a] || a) + '</b>';
+  if (!s) return n + '<div class="m">sin dato</div>';
+  var g = s.exp && s.turn22 ? s.exp / s.turn22 - 1 : null;
+  return n + '<div class="row"><span>Esperado hoy (AP)</span><b>' + n0(s.exp) + '</b></div>' +
+    '<div class="row"><span>Vs. 2022</span><b>' + (g == null ? '—' : (g >= 0 ? '+' : '') + f1(100 * g) + ' %') + '</b></div>' +
+    '<div class="row"><span>Ya votaron</span><b>' + (s.voted == null ? 'sin dato' : n0(s.voted) + ' (' + pc(s.pct_exp) + ')') + '</b></div>' +
+    (s.party ? '<div class="row"><span class="dd">Registrados D ' + f1(100 * s.dem / s.voted) + ' %</span><span class="rr">R ' + f1(100 * s.rep / s.voted) + ' %</span></div>' : '<div class="m">el estado no publica el partido</div>');
+}
+function buildMap(id, style, tip) {
+  var el = document.getElementById(id);
+  if (MAPS[id] || !GEO || el.offsetParent === null) return;
+  var m = L.map(el, {crs: L.CRS.Simple, zoomSnap: 0.25, zoomDelta: 0.5, attributionControl: false, minZoom: -8, maxZoom: 6,
+    scrollWheelZoom: false, dragging: !L.Browser.mobile});
+  var lay = L.geoJSON(GEO, {style: style, onEachFeature: function (f, l) {
+    l.bindTooltip(function () { return '<div class="tt">' + tip(f.properties.a) + '</div>'; }, {sticky: true});
+    l.on('mouseover', function () { l.setStyle({weight: 2, color: css('--ink')}); l.bringToFront(); });
+    l.on('mouseout', function () { l.setStyle(style(f)); });
+  }}).addTo(m);
+  m.fitBounds(lay.getBounds(), {padding: [8, 8]});
+  MAPS[id] = {map: m, layer: lay, style: style};
+}
+function restyle() {
+  if (!P) return;
+  $('#plg').innerHTML = '<span class="rr"><b>R +' + PSPAN + '</b></span><div class="gr" style="background:' + grad(function (t) { return divColor(2 * t - 1); }) + '"></div><span class="dd"><b>D/Ind. +' + PSPAN + '</b></span><span class="na"><i style="background:' + naColor() + '"></i>sin encuestas / sin elección</span>';
+  var M = EMETS[EMET];
+  $('#emHint').textContent = M.hint;
+  $('#elg').innerHTML = '<span' + (M.div ? ' class="rr"' : '') + '><b>' + M.lo + '</b></span><div class="gr" style="background:' + grad(M.div ? function (t) { return divColor(2 * t - 1); } : seqColor) + '"></div><span' + (M.div ? ' class="dd"' : '') + '><b>' + M.hi + '</b></span><span class="na"><i style="background:' + naColor() + '"></i>sin dato</span>';
+  if (!GEO) {
+    fetch('./geo/states.json').then(function (r) { return r.json(); }).then(function (g) { GEO = g; restyle(); });
+    return;
+  }
+  buildMap('pmap', pollStyle, pollTip);
+  buildMap('emap', earlyStyle, earlyTip);
+  Object.keys(MAPS).forEach(function (k) { MAPS[k].map.invalidateSize(); MAPS[k].layer.setStyle(MAPS[k].style); });
+}
+
+/* ---------- pestañas ---------- */
+var TABS = ['pronosticos', 'encuestas', 'participacion'];
+function showTab() {
+  var t = (location.hash || '').slice(1);
+  if (TABS.indexOf(t) < 0) t = TABS[0];
+  TABS.forEach(function (x) { document.getElementById('tab-' + x).hidden = x !== t; });
+  document.querySelectorAll('.navl a[data-tab]').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-tab') === t); a.setAttribute('aria-current', a.getAttribute('data-tab') === t ? 'page' : 'false'); });
+  window.scrollTo(0, 0);
+  restyle();
+}
+window.addEventListener('hashchange', showTab);
 
 /* ---------- voto anticipado ---------- */
 function renderEarly() {
@@ -126,6 +226,7 @@ function renderEarly() {
         '<td data-l="Registro" class="full">' + (s.voted == null ? '<span class="m">—</span>' : reg) + '</td>' +
         '<td data-l="Dato del" class="m">' + esc(fecha(s.last)) + '</td></tr>';
     }).join('') + '</tbody>';
+  restyle();
   $('#evNote').innerHTML = 'Fuente: ' + link('UF Election Lab', e.url) + ' (Michael McDonald), con datos oficiales de cada estado. ' +
     (e.missing.length ? 'No reportan: ' + e.missing.map(function (s) { return STATE_NAMES[s] || s; }).join(' y ') + '. ' : '') +
     '“Esperado hoy” es la estimación de AP de todos los votos que se van a contar (publicada por el NYT; AP la ajusta durante la noche). “Vs. 2022” la compara con todos los votos de 2022. “Parte de lo esperado” es lo ya votado por anticipado sobre ese total.';
@@ -145,6 +246,7 @@ function load() {
     if (!ok.length) { $('#errbox').textContent = 'No pude cargar los datos de la previa.'; return; }
     P = ok[0]; P.polls = P.polls || {};
     renderAll();
+    showTab();
   });
 }
 
@@ -156,12 +258,20 @@ document.querySelectorAll('#raceOff button').forEach(function (b) {
   });
 });
 $('#evQ').addEventListener('input', function () { if (P) renderEarly(); });
+document.querySelectorAll('#emMet button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    EMET = b.getAttribute('data-v');
+    document.querySelectorAll('#emMet button').forEach(function (x) { x.classList.toggle('on', x === b); });
+    restyle();
+  });
+});
 $('#themeBtn').addEventListener('click', function () {
   var dark = document.documentElement.getAttribute('data-theme') === 'dark' ||
     (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
   var t = dark ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', t);
   try { localStorage.setItem('theme', t); } catch (e) {}
+  restyle();
 });
 load();
 setInterval(load, 300000);

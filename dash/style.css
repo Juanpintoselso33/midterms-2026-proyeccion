@@ -39,7 +39,7 @@ a{color:inherit}
 .top .wrap{display:flex;align-items:center;gap:16px;min-height:48px}
 .brand{font:700 15px/1 var(--serif);letter-spacing:.01em;white-space:nowrap;color:#fff}
 .brand i{font-style:normal;display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:linear-gradient(90deg,#6f9bff 50%,#ff7b6d 50%)}
-.navl{display:flex;gap:2px;margin-left:8px;flex:1;min-width:0}
+.navl{display:flex;gap:2px;margin-left:8px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
 .navl a{color:#c4cbd8;text-decoration:none;font-size:13px;padding:6px 10px;border-radius:5px;white-space:nowrap}
 .navl a:hover{background:rgba(255,255,255,.1);color:#fff}
 .live{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#c4cbd8;white-space:nowrap}
