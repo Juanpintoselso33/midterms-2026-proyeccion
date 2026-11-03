@@ -57,7 +57,7 @@ function renderForecasts() {
         cell(r.S, 'Senado', 100) + cell(r.H, 'Cámara', 435) + '<td data-l="Fecha" class="m">' + esc(r.date || '') + '</td></tr>';
     }).join('') + '</tbody>';
   $('#fcNote').textContent = 'Silver Bulletin: la Cámara (95 %) sale del texto público de su pronóstico y el Senado (75 %) de una comparación de terceros; sus tablas son pagas. Los mercados de predicción (si figuran) son precios de apuestas, no encuestas. ' +
-    'La fila de este tablero es su punto de partida, armado con las calificaciones de los analistas; desde el primer conteo pasa a mandar el voto real.';
+    'La fila de este tablero es su punto de partida, armado con las encuestas; desde el primer conteo pasa a mandar el voto real.';
 }
 
 /* ---------- pronósticos por estado ---------- */
