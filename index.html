@@ -6,14 +6,14 @@
 <title>Midterms 2026 en vivo</title>
 <meta name="description" content="Proyección en vivo de las elecciones de medio término de EE.UU. 2026: Senado, Cámara de Representantes y gobernaciones.">
 <link rel="stylesheet" href="lib/leaflet.css">
-<link rel="stylesheet" href="style.css?v=1652">
+<link rel="stylesheet" href="style.css?v=1658">
 </head>
 <body>
 <header class="top">
   <div class="wrap">
     <div class="brand"><i></i>Midterms 2026 <span>· en vivo</span></div>
     <nav class="navl" aria-label="Secciones">
-      <a href="#resumen" data-tab="resumen">Control</a><a href="#evolucion" data-tab="evolucion">Evolución</a><a href="#carreras" data-tab="carreras">Carreras</a><a href="#mapas" data-tab="mapas">Mapas</a><a href="previa.html#pronosticos">Pronósticos</a><a href="previa.html#encuestas">Encuestas</a><a href="previa.html#participacion">Participación</a>
+      <a href="./" class="on" aria-current="page">En vivo</a><a href="previa.html#pronosticos">Pronósticos</a><a href="previa.html#encuestas">Encuestas</a><a href="previa.html#participacion">Participación</a>
     </nav>
     <div class="live" id="live"><span class="dot"></span><span class="lt" id="liveTxt">Cargando…</span></div>
     <button class="ibtn" id="themeBtn" type="button" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">◐</button>
@@ -22,7 +22,7 @@
 
 <main class="wrap">
   <div class="errbox" id="errbox" role="alert"></div>
-  <section class="hero tab" id="resumen">
+  <section class="hero" id="resumen">
     <div class="kick">Martes 3 de noviembre de 2026</div>
     <h1>Quién se queda con el Congreso de EE.UU.</h1>
     <p class="sub">Proyección en vivo de la elección de medio término: probabilidad de control de cada partido, bancas esperadas con su rango al 90 % y cómo se mueve a medida que entra el conteo. Siempre los dos lados: Demócratas (e independientes aliados) y Republicanos.</p>
@@ -30,7 +30,7 @@
     <div class="chambers" id="chambers"></div>
   </section>
 
-  <section class="block tab" id="evolucion" hidden>
+  <section class="block" id="evolucion">
     <div class="head">
       <div><h2>Evolución de la proyección</h2><p class="hint">Cada punto es una corrida del modelo. Se muestran los dos partidos a la vez.</p></div>
       <div class="ctl">
@@ -45,7 +45,7 @@
     </div>
   </section>
 
-  <section class="block tab" id="carreras" hidden>
+  <section class="block" id="carreras">
     <div class="head">
       <div><h2>Carreras</h2><p class="hint">Tocá una fila para abrir el detalle con el mapa de condados. D/I = demócrata, o independiente cuando está marcado “Ind.”.</p></div>
     </div>
@@ -60,7 +60,7 @@
     </div>
   </section>
 
-  <section class="block tab" id="mapas" hidden>
+  <section class="block" id="mapas">
     <div class="head">
       <div><h2>Mapas</h2><p class="hint">Azul = demócrata / independiente, rojo = republicano, violeta = parejo, gris claro = sin dato o sin elección. Tocá un estado o distrito para ver el detalle.</p></div>
     </div>
@@ -108,6 +108,6 @@
 
 <script src="lib/leaflet.js"></script>
 <script src="lib/chart.umd.js"></script>
-<script src="app.js?v=1652"></script>
+<script src="app.js?v=1658"></script>
 </body>
 </html>

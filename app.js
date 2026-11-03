@@ -606,23 +606,10 @@ function openRace(id, noPush) {
 function closeRace() {
   SEL = null;
   $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on'); $('#drawer').setAttribute('aria-hidden', 'true');
-  try { history.replaceState(null, '', location.pathname + location.search + '#' + TAB); } catch (e) {}
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
   renderTable();
 }
 
-/* ---------- pestañas: una sección por vez ---------- */
-var TABS = ['resumen', 'evolucion', 'carreras', 'mapas'], TAB = TABS[0];
-function showTab() {
-  var t = (location.hash || '').slice(1);
-  if (TABS.indexOf(t) >= 0) { TAB = t; if (SEL) closeRace(); }
-  else if (/^race=/.test(t)) TAB = 'carreras';
-  TABS.forEach(function (x) { document.getElementById(x).hidden = x !== TAB; });
-  document.querySelectorAll('.navl a[data-tab]').forEach(function (a) { var on = a.getAttribute('data-tab') === TAB; a.classList.toggle('on', on); a.setAttribute('aria-current', on ? 'page' : 'false'); });
-  window.scrollTo(0, 0);
-  if (TAB === 'evolucion' && CH.evo) CH.evo.resize();
-  if (TAB === 'mapas' && MAP.m1) { fitMap(MAP.m1, MAP.s1); fitMap(MAP.m2, MAP.s2); }
-}
-window.addEventListener('hashchange', showTab);
 function unitVal(u, mode) {
   if (!u) return null;
   if (mode === 'part') return u.p;
@@ -795,7 +782,6 @@ function toggleSeg(sel, btn) {
 try { var th = localStorage.getItem('theme'); if (th) document.documentElement.setAttribute('data-theme', th); } catch (e) {}
 chartDefaults();
 bind();
-showTab();
 load().then(function () {
   var m = /race=([^&]+)/.exec(location.hash);
   if (m && DATA) openRace(decodeURIComponent(m[1]), true);
