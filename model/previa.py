@@ -52,6 +52,27 @@ def early():
         states=states)
 
 
+def expected():
+    """Votos totales esperados según AP (feed del NYT), nacional y por estado.
+
+    Por estado se usa la carrera estatal más grande (gobernación o Senado); si no hay, la suma de
+    la Cámara, que se queda corta donde hay bancas sin rival."""
+    raw = ROOT / "data" / "live" / "2026-11-03" / "raw"
+    nat, st = None, {}
+    for f in ("results-house", "results-senate", "results-governor"):
+        house, acc = f == "results-house", {}
+        for r in json.loads((raw / f"{f}.json").read_text())["races"]:
+            t = r.get("top_reporting_unit") or (r.get("reporting_units") or [{}])[0]
+            if r["nyt_id"].startswith("US-"):
+                nat = t.get("total_expected_vote")
+                continue
+            s, v = t.get("state_postal"), t.get("total_expected_vote") or 0
+            acc[s] = acc.get(s, 0) + v if house else max(acc.get(s, 0), v)
+        for s, v in acc.items():
+            st[s] = max(st.get(s, 0), v)
+    return nat, st
+
+
 def ours():
     d = json.loads((DASH / "data.json").read_text())
     ch = {k: {kk: v[kk] for kk in ("p_D", "p_R", "D_med", "R_med", "D_ci90", "R_ci90")}
@@ -69,12 +90,24 @@ def ours():
 
 def main():
     out = dict(updated=time.strftime("%Y-%m-%d %H:%M"), early=early(), ours=ours())
+    nat, st = expected()
+    e = out["early"]
+    e["expected"] = nat
+    e["expected_states"] = sum(st.values())
+    for s in e["states"]:
+        s["exp"] = st.get(s["st"])
+        s["pct_exp"] = round(s["voted"] / s["exp"], 4) if s.get("exp") else None
+    # Estados sin voto anticipado publicado (AL, NH): igual van en la tabla de participación.
+    have = {s["st"] for s in e["states"]}
+    for k, v in st.items():
+        if k not in have:
+            e["states"].append(dict(st=k, name=k, voted=None, mail=None, inperson=None, turn22=None, pct22=None,
+                                    dem=0, rep=0, none=0, party=False, last="", exp=v, pct_exp=None))
     p = ROOT / "research" / "previa_encuestas.json"
     out["polls"] = json.loads(p.read_text()) if p.exists() else {}
     tmp = DASH / "previa.tmp"
     tmp.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
     tmp.replace(DASH / "previa.json")
-    e = out["early"]
     print(f'anticipado {e["voted"]:,} votos ({e["voted"] / e["turn22"]:.0%} del total 2022) · '
           f'encuestas: {len(out["polls"].get("races", []))} carreras')
 

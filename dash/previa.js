@@ -103,26 +103,32 @@ function renderRaces() {
 /* ---------- voto anticipado ---------- */
 function renderEarly() {
   var e = P.early, p = e.party, two = p.dem + p.rep;
+  var grow = e.expected / e.turn22 - 1;
   $('#evK').innerHTML =
-    '<div class="kpi"><div class="k">Votos ya emitidos</div><div class="v">' + mill(e.voted) + '</div><div class="s">' + pc(e.voted / e.turn22) + ' de todos los votos de 2022</div></div>' +
+    '<div class="kpi"><div class="k">Participación esperada (AP)</div><div class="v">' + mill(e.expected) + '</div><div class="s">' + (grow >= 0 ? '+' : '') + f1(100 * grow) + ' % contra los ' + mill(e.turn22) + ' de 2022</div></div>' +
+    '<div class="kpi"><div class="k">Ya votaron por anticipado</div><div class="v">' + mill(e.voted) + '</div><div class="s">' + pc(e.voted / e.expected) + ' de lo que se espera hoy · ' + pc(e.voted / e.turn22) + ' del total de 2022</div></div>' +
     '<div class="kpi"><div class="k">Por correo · en persona</div><div class="v">' + mill(e.mail) + ' · ' + mill(e.inperson) + '</div><div class="s">' + pc(e.mail / e.voted) + ' por correo</div></div>' +
     '<div class="kpi"><div class="k">Registro de quienes votaron</div><div class="sv" style="margin-top:8px"><span class="dd">Demócratas ' + f1(100 * p.dem / p.voted) + ' %</span><span class="rr">Republicanos ' + f1(100 * p.rep / p.voted) + ' %</span></div>' +
       split(p.dem, p.rep, p.none) + '<div class="s">Sin partido u otro: ' + f1(100 * p.none / p.voted) + ' %. Sólo ' + p.states + ' estados publican el partido. Entre D y R: <span class="dd">' + f1(100 * p.dem / two) + '</span> – <span class="rr">' + f1(100 * p.rep / two) + '</span></div></div>';
   var q = ($('#evQ').value || '').trim().toLowerCase();
   var ss = e.states.filter(function (s) { return !q || sname(s).toLowerCase().indexOf(q) >= 0 || s.st.toLowerCase() === q; });
-  $('#evT').innerHTML = '<thead><tr><th>Estado</th><th class="ra">Votos emitidos</th><th>Vs. total de 2022</th><th class="ra">Correo · persona</th><th>Registro: D · R · sin partido</th><th>Dato del</th></tr></thead><tbody>' +
+  ss.sort(function (a, b) { return (b.exp || 0) - (a.exp || 0); });
+  $('#evT').innerHTML = '<thead><tr><th>Estado</th><th class="ra">Esperado hoy (AP)</th><th class="ra">Vs. 2022</th><th class="ra">Ya votaron</th><th>Parte de lo esperado</th><th class="ra">Correo · persona</th><th>Registro: D · R · sin partido</th><th>Dato del</th></tr></thead><tbody>' +
     ss.map(function (s) {
       var reg = s.party ? '<div class="sv"><span class="dd">D ' + f1(100 * s.dem / s.voted) + '</span><span class="m">' + f1(100 * s.none / s.voted) + '</span><span class="rr">R ' + f1(100 * s.rep / s.voted) + '</span></div>' + split(s.dem, s.rep, s.none) : '<span class="m">el estado no lo publica</span>';
+      var g = s.exp && s.turn22 ? s.exp / s.turn22 - 1 : null;
       return '<tr><td data-l="Estado" class="full"><b>' + esc(sname(s)) + '</b></td>' +
-        '<td data-l="Votos emitidos" class="ra">' + n0(s.voted) + '</td>' +
-        '<td data-l="Vs. total de 2022"><div class="sv"><span>' + pc(s.pct22) + '</span></div><div class="pbar2"><i style="width:' + Math.min(100, 100 * (s.pct22 || 0)) + '%"></i></div></td>' +
-        '<td data-l="Correo · persona" class="ra m">' + n0(s.mail) + ' · ' + n0(s.inperson) + '</td>' +
-        '<td data-l="Registro" class="full">' + reg + '</td>' +
+        '<td data-l="Esperado hoy (AP)" class="ra">' + n0(s.exp) + '</td>' +
+        '<td data-l="Vs. 2022" class="ra">' + (g == null ? '<span class="m">—</span>' : (g >= 0 ? '+' : '') + f1(100 * g) + ' %') + '</td>' +
+        '<td data-l="Ya votaron" class="ra">' + (s.voted == null ? '<span class="m">sin dato</span>' : n0(s.voted)) + '</td>' +
+        '<td data-l="Parte de lo esperado">' + (s.pct_exp == null ? '<span class="m">—</span>' : '<div class="sv"><span>' + pc(s.pct_exp) + '</span></div><div class="pbar2"><i style="width:' + Math.min(100, 100 * s.pct_exp) + '%"></i></div>') + '</td>' +
+        '<td data-l="Correo · persona" class="ra m">' + (s.voted == null ? '—' : n0(s.mail) + ' · ' + n0(s.inperson)) + '</td>' +
+        '<td data-l="Registro" class="full">' + (s.voted == null ? '<span class="m">—</span>' : reg) + '</td>' +
         '<td data-l="Dato del" class="m">' + esc(fecha(s.last)) + '</td></tr>';
     }).join('') + '</tbody>';
   $('#evNote').innerHTML = 'Fuente: ' + link('UF Election Lab', e.url) + ' (Michael McDonald), con datos oficiales de cada estado. ' +
     (e.missing.length ? 'No reportan: ' + e.missing.map(function (s) { return STATE_NAMES[s] || s; }).join(' y ') + '. ' : '') +
-    '“Vs. total de 2022” compara lo ya emitido con todos los votos de la elección de 2022 (anticipados y del día).';
+    '“Esperado hoy” es la estimación de AP de todos los votos que se van a contar (publicada por el NYT; AP la ajusta durante la noche). “Vs. 2022” la compara con todos los votos de 2022. “Parte de lo esperado” es lo ya votado por anticipado sobre ese total.';
 }
 
 function renderAll() {
