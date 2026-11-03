@@ -117,7 +117,7 @@ function statusOf(r) {
   if (w) return {k:3, t:'Ganó ' + w, cls:(r.winner[0] === 'X' ? xc(r) : yc(r))};
   if (/called/.test(c) && !/uncalled|not/.test(c)) return {k:3, t:'Proyectada', cls:''};
   if (/runoff/.test(c)) return {k:2, t:'Segunda vuelta', cls:''};
-  if (!r.eevp || /too/.test(c)) return {k:0, t:'Sin datos', cls:''};
+  if (!r.eevp || c === 'too_early') return {k:0, t:'Sin datos', cls:''};
   return {k:1, t:'En conteo', cls:''};
 }
 function compKey(r) { return hasProj(r) && r.p_B_win != null ? Math.abs(r.p_B_win - 0.5) : 9; }
@@ -193,10 +193,26 @@ function renderAll() {
   tickLive();
 }
 
+function parseStamp(s) {
+  var m = /^(\d{4})-(\d\d)-(\d\d)[ T](\d\d):(\d\d)(?::(\d\d))?/.exec(s || '');
+  return m ? Date.parse(m[1] + '-' + m[2] + '-' + m[3] + 'T' + m[4] + ':' + m[5] + ':' + (m[6] || '00') + '-03:00') : NaN;
+}
 function tickLive() {
-  var el = $('#liveTxt');
+  var el = $('#liveTxt'), box = $('#live'), cm = $('#liveMin');
+  cm.textContent = '';
   if (!lastOk) { el.textContent = 'Sin conexión'; return; }
   var left = Math.max(0, Math.round((lastOk + REFRESH_MS - Date.now()) / 1000));
+  // Antigüedad = la del dato más viejo entre el cálculo del modelo y el feed del NYT (si el JSON lo trae).
+  var ts = [parseStamp(lastUpdated), parseStamp(DATA && DATA.feed_updated)].filter(function (x) { return !isNaN(x); });
+  var mins = ts.length ? Math.max(0, Math.floor((Date.now() - Math.min.apply(null, ts)) / 60000)) : 0;
+  box.classList.toggle('warn', mins > 5 && mins <= 15);
+  box.classList.toggle('err', mins > 15);
+  if (mins > 5) {
+    el.textContent = 'Datos de hace ' + mins + ' min'; cm.textContent = mins + ' min';
+    el.title = 'Actualizado: ' + lastUpdated;
+    return;
+  }
+  el.title = '';
   el.textContent = 'Actualizado: ' + lastUpdated + ' · próxima en ' + left + ' s';
 }
 
@@ -236,7 +252,7 @@ function renderChambers() {
       '<div class="pbar" role="img" aria-label="Demócratas ' + fprob(c.p_D) + ', Republicanos ' + fprob(c.p_R) + '"><i class="bd" style="width:' + (c.p_D * 100) + '%"></i>' +
         (rest > 0.004 ? '<i style="width:' + (rest * 100) + '%;background:var(--grey)"></i>' : '') +
         '<i class="br" style="width:' + (c.p_R * 100) + '%"></i></div>' +
-      (rest > 0.004 ? '<div class="sub2" style="margin-top:6px">Sin mayoría clara en ' + fprob(rest) + ' de las simulaciones' + (c.I_med ? ' (independientes en la mediana: ' + c.I_med + ')' : '') + '.</div>' : (c.I_med ? '<div class="sub2" style="margin-top:6px">Independientes en la mediana: ' + c.I_med + ' (contados con los demócratas).</div>' : ''));
+      (rest > 0.004 ? '<div class="sub2" style="margin-top:6px">Sin mayoría clara en ' + fprob(rest) + ' de las simulaciones' + (c.I_med ? ' (independientes: ' + c.I_med + ' en la mediana, no se cuentan para ninguna mayoría)' : '') + '.</div>' : (c.I_med ? '<div class="sub2" style="margin-top:6px">Independientes: ' + c.I_med + ' en la mediana (no se cuentan para ninguna mayoría).</div>' : ''));
     var st = chamberStats(off);
     $('.chfoot', el).innerHTML = '<span>Distribución de bancas demócratas en las simulaciones</span><span>' + st.started + ' de ' + st.n + ' carreras con voto · ' + f1(st.pct) + ' % del voto esperado<span class="prog"><i style="width:' + Math.min(100, st.pct) + '%"></i></span></span>';
     drawHist(off, c, $('canvas', el));
@@ -296,7 +312,7 @@ function drawHist(off, c, canvas) {
         thresh: {need: c.D_needs},
         tooltip: {
           callbacks: {
-            title: function (it) { var d = +it[0].label, cc = chart._c; return 'D/Ind. ' + (d + (cc.I_med || 0) * 0) + ' · R ' + (cc.total - d - (cc.I_med || 0)) + (cc.I_med ? ' · Ind. ' + cc.I_med : ''); },
+            title: function (it) { var d = +it[0].label, cc = chart._c; return 'D ' + d + ' bancas'; },
             label: function (it) { return nf1.format(it.parsed.y) + ' % de las simulaciones'; }
           }
         }

@@ -40,7 +40,7 @@ function renderForecasts() {
   });
   var rows = order.map(function (s) { return by[s]; });
   var o = P.ours.chambers;
-  rows.push({source: 'Este tablero (antes del conteo)', ours: true, date: P.ours.updated,
+  rows.push({source: 'Este tablero (antes del conteo, 19:59)', ours: true, date: P.ours.updated,
     S: {p_D: o.S.p_D, p_R: o.S.p_R, seats_D: o.S.D_med, seats_R: o.S.R_med},
     H: {p_D: o.H.p_D, p_R: o.H.p_R, seats_D: o.H.D_med, seats_R: o.H.R_med}});
   function cell(c, lbl, total) {
