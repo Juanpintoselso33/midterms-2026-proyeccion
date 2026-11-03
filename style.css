@@ -171,7 +171,7 @@ table.rt{border-collapse:collapse;width:100%;font-size:13.5px}
 .mh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .mh h3{font:700 18px/1.15 var(--serif);margin:0}
 .mh p{margin:3px 0 0;color:var(--mut);font-size:12.5px}
-.map{height:460px;border-radius:8px;background:var(--map-bg);border:1px solid var(--line);position:relative}
+.map{isolation:isolate;z-index:0;height:460px;border-radius:8px;background:var(--map-bg);border:1px solid var(--line);position:relative}
 @media(max-width:700px){.map{height:340px}}
 .leaflet-container{background:var(--map-bg);font:inherit}
 .leaflet-container path.leaflet-interactive{outline:none}
