@@ -226,3 +226,4 @@ table.rt{border-collapse:collapse;width:100%;font-size:13.5px}
 @media(max-width:700px){.brand{font-size:14px}.navl{margin-left:0}.navl a{padding:6px 6px;font-size:12px}.live{gap:0}}
 .cmp dd{white-space:nowrap}
 @media(max-width:700px){.cmp>div{padding:10px}.cmp dl{gap:5px 6px;font-size:12.5px}.cmp dd.v{font-size:14px}}
+.navl a.on{background:rgba(255,255,255,.14);color:#fff}
