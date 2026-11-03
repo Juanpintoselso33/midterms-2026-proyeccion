@@ -36,3 +36,4 @@ table.pt{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numer
 }
 .navl a.on{background:rgba(255,255,255,.14);color:#fff}
 .tab .hero{padding-bottom:6px}
+.map{isolation:isolate;z-index:0}
