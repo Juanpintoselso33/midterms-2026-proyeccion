@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Midterms 2026 · Previa</title>
+<meta name="description" content="Lo que se sabe antes del conteo: pronósticos, encuestas y voto anticipado de las elecciones de medio término de EE.UU. 2026.">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="previa.css">
+<script>try { var th = localStorage.getItem('theme'); if (th) document.documentElement.setAttribute('data-theme', th); } catch (e) {}</script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><i></i>Midterms 2026 <span>· previa</span></div>
+    <nav class="navl" aria-label="Secciones">
+      <a href="./">En vivo</a><a href="#pronosticos">Pronósticos</a><a href="#nacional">Encuesta nacional</a><a href="#encuestas">Por carrera</a><a href="#anticipado">Voto anticipado</a>
+    </nav>
+    <button class="ibtn" id="themeBtn" type="button" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="kick">Martes 3 de noviembre de 2026 · antes del conteo</div>
+    <h1>Lo que se sabe antes de que cierren las urnas</h1>
+    <p class="sub">Pronósticos publicados, promedios de encuestas y votos ya emitidos por anticipado. Siempre los dos lados: Demócratas (e independientes aliados) y Republicanos. Las primeras urnas cierran a las 20:00 de Argentina.</p>
+    <div class="errbox" id="errbox" role="alert"></div>
+  </section>
+
+  <section class="block" id="pronosticos">
+    <div class="head"><div><h2>Pronósticos</h2><p class="hint">Probabilidad de que cada partido controle cada cámara, y bancas esperadas cuando el pronóstico las publica. Senado: los demócratas necesitan 51 bancas; los republicanos, 50 (desempata el vicepresidente). Cámara: 218 de 435.</p></div></div>
+    <div class="card"><div class="tw"><table class="pt" id="fcT"></table></div><p class="note" id="fcNote"></p></div>
+  </section>
+
+  <section class="block" id="nacional">
+    <div class="head"><div><h2>Encuesta nacional para el Congreso</h2><p class="hint">“Si la elección fuera hoy, ¿a qué partido votaría para la Cámara?”. Promedios de encuestas.</p></div></div>
+    <div class="card"><div id="gbT"></div></div>
+  </section>
+
+  <section class="block" id="encuestas">
+    <div class="head"><div><h2>Encuestas por carrera</h2><p class="hint">Promedio final de encuestas en las carreras disputadas de Senado y gobernación, al lado de la estimación de este tablero antes del conteo.</p></div>
+      <div class="ctl"><div class="seg" id="raceOff" role="group" aria-label="Tipo de carrera"><button type="button" data-v="S" class="on">Senado</button><button type="button" data-v="G">Gobernaciones</button></div></div></div>
+    <div class="card"><div class="tw"><table class="pt" id="rcT"></table></div><p class="note" id="rcNote"></p></div>
+  </section>
+
+  <section class="block" id="anticipado">
+    <div class="head"><div><h2>Voto anticipado</h2><p class="hint">Boletas ya emitidas antes de hoy, por correo o en persona. El partido es el de registro del votante, no su voto: sólo lo publican algunos estados, y muchos independientes votan a uno u otro.</p></div></div>
+    <div class="kpis" id="evK"></div>
+    <div class="card" style="margin-top:14px">
+      <div class="ctl"><input class="sbox" id="evQ" type="search" placeholder="Buscar estado" aria-label="Buscar estado" autocomplete="off"></div>
+      <div class="tw"><table class="pt" id="evT"></table></div>
+      <p class="note" id="evNote"></p>
+    </div>
+  </section>
+
+  <footer class="foot" id="foot"></footer>
+</main>
+<script src="previa.js"></script>
+</body>
+</html>
