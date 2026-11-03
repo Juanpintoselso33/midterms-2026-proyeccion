@@ -6,8 +6,8 @@
 <title>Midterms 2026 · Previa</title>
 <meta name="description" content="Lo que se sabe antes del conteo: pronósticos, encuestas y participación en las elecciones de medio término de EE.UU. 2026.">
 <link rel="stylesheet" href="lib/leaflet.css">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="previa.css">
+<link rel="stylesheet" href="style.css?v=1652">
+<link rel="stylesheet" href="previa.css?v=1652">
 <script>try { var th = localStorage.getItem('theme'); if (th) document.documentElement.setAttribute('data-theme', th); } catch (e) {}</script>
 </head>
 <body>
@@ -31,6 +31,14 @@
       <p class="sub">Probabilidad de que cada partido controle cada cámara según los pronosticadores y los mercados de apuestas, y bancas esperadas cuando las publican. Senado: los demócratas necesitan 51 bancas; los republicanos, 50 (desempata el vicepresidente). Cámara: 218 de 435.</p>
     </div>
     <div class="card"><div class="tw"><table class="pt" id="fcT"></table></div><p class="note" id="fcNote"></p></div>
+
+    <div class="head"><div><h2>Por estado</h2><p class="hint">Color: calificación de los analistas para cada carrera, de segura republicana a segura demócrata. Pasá el cursor por un estado para ver la probabilidad de cada lado.</p></div>
+      <div class="ctl"><div class="seg" id="fcOff" role="group" aria-label="Tipo de carrera"><button type="button" data-v="S" class="on">Senado</button><button type="button" data-v="G">Gobernaciones</button></div></div></div>
+    <div class="card">
+      <div class="map" id="fmap" role="img" aria-label="Mapa de calificaciones de los pronosticadores por estado"></div>
+      <div class="lg" id="flg"></div>
+    </div>
+    <div class="card" style="margin-top:14px"><div class="tw"><table class="pt" id="frT"></table></div><p class="note" id="frNote"></p></div>
   </section>
 
   <section class="tab" id="tab-encuestas" hidden>
@@ -59,7 +67,7 @@
     </div>
     <div class="kpis" id="evK"></div>
     <div class="head"><div><h2>Mapa</h2><p class="hint" id="emHint"></p></div>
-      <div class="ctl"><div class="seg" id="emMet" role="group" aria-label="Qué mostrar en el mapa"><button type="button" data-v="share" class="on">Ya votó (de lo esperado)</button><button type="button" data-v="grow">Esperado vs. 2022</button><button type="button" data-v="reg">Registro D vs. R</button></div></div></div>
+      <div class="ctl"><div class="seg" id="emMet" role="group" aria-label="Qué mostrar en el mapa"><button type="button" data-v="reg" class="on">Quién va adelante (registro)</button><button type="button" data-v="share">Ya votó (de lo esperado)</button><button type="button" data-v="grow">Esperado vs. 2022</button></div></div></div>
     <div class="card">
       <div class="map" id="emap" role="img" aria-label="Mapa de participación por estado"></div>
       <div class="lg" id="elg"></div>
@@ -75,6 +83,6 @@
   <footer class="foot" id="foot"></footer>
 </main>
 <script src="lib/leaflet.js"></script>
-<script src="previa.js"></script>
+<script src="previa.js?v=1652"></script>
 </body>
 </html>

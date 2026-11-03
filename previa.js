@@ -60,6 +60,52 @@ function renderForecasts() {
     'La fila de este tablero es su punto de partida, armado con las calificaciones de los analistas; desde el primer conteo pasa a mandar el voto real.';
 }
 
+/* ---------- pronósticos por estado ---------- */
+var RATINGS = [['solid-rep', 'Segura R', -1], ['likely-rep', 'Probable R', -0.66], ['lean-rep', 'Inclinada R', -0.4], ['tilt-rep', 'Leve R', -0.2], ['tossup', 'Pareja', 0],
+  ['tilt-dem', 'Leve D', 0.2], ['lean-dem', 'Inclinada D', 0.4], ['likely-dem', 'Probable D', 0.66], ['solid-dem', 'Segura D', 1]];
+function ratingOf(k) { return RATINGS.filter(function (r) { return r[0] === k; })[0]; }
+function rlabel(k) { var g = ratingOf(k); return g ? g[1] : (k || '—'); }
+function xname(r) { return r.x + (r.ind ? ' (Ind.)' : ''); }
+function fcRace(a) { return P.ours.races[a + '-' + FOFF]; }
+function fcExtra(a) { return (P.polls.race_forecasts || []).filter(function (f) { return f.state === a && f.office === FOFF; }); }
+function fcStyle(f) {
+  var r = fcRace(f.properties.a), g = r && ratingOf(r.rating);
+  if (!r) return {fillColor: naColor(), fillOpacity: 0.45, color: css('--card'), weight: 1};
+  return {fillColor: g ? divColor(g[2]) : divColor(2 * (r.p_D - 0.5)), fillOpacity: 1, color: css('--card'), weight: 1};
+}
+function probRow(lbl, pd) {
+  return '<div class="row"><span>' + esc(lbl) + '</span><b><span class="dd">D/I ' + pc(pd) + '</span> · <span class="rr">R ' + pc(pd == null ? null : 1 - pd) + '</span></b></div>';
+}
+function fcTip(a) {
+  var r = fcRace(a), n = '<b>' + esc(STATE_NAMES[a] || a) + '</b>';
+  if (!r) return n + '<div class="m">sin elección</div>';
+  return n + '<div class="row"><span class="dd">' + esc(xname(r)) + '</span><span class="rr">' + esc(r.y) + '</span></div>' +
+    '<div class="row"><span>Calificación (NYT)</span><b>' + (r.rating ? rlabel(r.rating) : 'sin calificación') + '</b></div>' +
+    fcExtra(a).map(function (f) { return f.p_D != null ? probRow(f.source, f.p_D) : '<div class="row"><span>' + esc(f.source) + '</span><b>' + esc(rlabel(f.rating)) + '</b></div>'; }).join('') +
+    probRow('Este tablero', r.p_D);
+}
+function renderFcRaces() {
+  var rs = Object.keys(P.ours.races).map(function (k) { var r = P.ours.races[k]; r.k = k; return r; }).filter(function (r) { return r.k.slice(3) === FOFF; });
+  rs.sort(function (a, b) { return Math.abs(a.p_D - 0.5) - Math.abs(b.p_D - 0.5); });
+  var srcs = [];
+  (P.polls.race_forecasts || []).forEach(function (f) { if (f.office === FOFF && srcs.indexOf(f.source) < 0) srcs.push(f.source); });
+  function cellP(pd) { return pd == null ? '<span class="m">—</span>' : '<div class="sv"><span class="dd">D/I ' + pc(pd) + '</span><span class="rr">R ' + pc(1 - pd) + '</span></div>' + split(pd, 1 - pd); }
+  $('#frT').innerHTML = '<thead><tr><th>Estado</th><th>Candidatos</th><th>Calificación (NYT)</th>' + srcs.map(function (s) { return '<th>' + esc(s) + '</th>'; }).join('') + '<th>Este tablero</th></tr></thead><tbody>' +
+    rs.map(function (r) {
+      var a = r.k.slice(0, 2), g = ratingOf(r.rating), ex = fcExtra(a);
+      return '<tr><td data-l="Estado" class="full"><b>' + esc(STATE_NAMES[a] || a) + '</b></td>' +
+        '<td data-l="Candidatos"><span class="dd">' + esc(xname(r)) + '</span> · <span class="rr">' + esc(r.y) + '</span></td>' +
+        '<td data-l="Calificación (NYT)">' + (g ? '<span class="' + (g[2] > 0 ? 'dd' : g[2] < 0 ? 'rr' : '') + '">' + g[1] + '</span>' : '<span class="m">—</span>') + '</td>' +
+        srcs.map(function (s) {
+          var f = ex.filter(function (x) { return x.source === s; })[0];
+          return '<td data-l="' + esc(s) + '">' + (!f ? '<span class="m">—</span>' : f.p_D != null ? cellP(f.p_D) : esc(rlabel(f.rating))) + '</td>';
+        }).join('') +
+        '<td data-l="Este tablero">' + cellP(r.p_D) + '</td></tr>';
+    }).join('') + '</tbody>';
+  $('#frNote').textContent = 'Calificación: la que publica el NYT junto con los resultados. Las demás columnas, cuando hay, son probabilidades o calificaciones públicas de cada pronosticador, con su fuente. “Este tablero” es la probabilidad del modelo propio antes del conteo, que parte de las encuestas. Orden: carreras más parejas primero.';
+  if (MAPS.fmap) MAPS.fmap.layer.setStyle(fcStyle);
+}
+
 /* ---------- encuesta nacional ---------- */
 function renderGeneric() {
   var g = P.polls.generic_ballot || [];
@@ -124,13 +170,13 @@ function naColor() { return rgb(pal().na); }
 function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function grad(f) { var st = []; for (var i = 0; i <= 12; i++) st.push(f(i / 12)); return 'linear-gradient(90deg,' + st.join(',') + ')'; }
 
-var GEO = null, MAPS = {}, EMET = 'share', PSPAN = 15;
+var GEO = null, MAPS = {}, EMET = 'reg', PSPAN = 15, FOFF = 'S';
 var EMETS = {
   share: {hint: 'Color: qué parte de los votos que AP espera hoy ya se emitió por anticipado.', lo: '0 %', hi: '100 %',
     val: function (s) { return s.pct_exp == null ? null : s.pct_exp; }, color: function (v) { return seqColor(v); }},
   grow: {hint: 'Color: cuántos votos espera AP hoy comparado con todos los votos de 2022.', lo: '−10 %', hi: '+40 %',
     val: function (s) { return s.exp && s.turn22 ? s.exp / s.turn22 - 1 : null; }, color: function (v) { return seqColor((v + 0.1) / 0.5); }},
-  reg: {hint: 'Color: entre quienes ya votaron, diferencia entre registrados demócratas y republicanos. Sólo en los estados que publican el partido.', lo: 'R +30', hi: 'D +30',
+  reg: {hint: 'Color: quién va adelante entre quienes ya votaron, según su partido de registro (no es el voto: muchos independientes votan a uno u otro). Sólo en los estados que publican el partido.', lo: 'R +30', hi: 'D +30',
     val: function (s) { return s.party && s.voted ? (s.dem - s.rep) / s.voted : null; }, color: function (v) { return divColor(v / 0.3); }, div: true}
 };
 function stateOf(a) { return P.early.states.filter(function (s) { return s.st === a; })[0]; }
@@ -183,6 +229,8 @@ function restyle() {
     fetch('./geo/states.json').then(function (r) { return r.json(); }).then(function (g) { GEO = g; restyle(); });
     return;
   }
+  $('#flg').innerHTML = RATINGS.map(function (r) { return '<span class="na"><i style="background:' + divColor(r[2]) + '"></i>' + r[1] + '</span>'; }).join('') + '<span class="na"><i style="background:' + naColor() + '"></i>sin elección</span>';
+  buildMap('fmap', fcStyle, fcTip);
   buildMap('pmap', pollStyle, pollTip);
   buildMap('emap', earlyStyle, earlyTip);
   Object.keys(MAPS).forEach(function (k) { MAPS[k].map.invalidateSize(); MAPS[k].layer.setStyle(MAPS[k].style); });
@@ -213,7 +261,7 @@ function renderEarly() {
   var q = ($('#evQ').value || '').trim().toLowerCase();
   var ss = e.states.filter(function (s) { return !q || sname(s).toLowerCase().indexOf(q) >= 0 || s.st.toLowerCase() === q; });
   ss.sort(function (a, b) { return (b.exp || 0) - (a.exp || 0); });
-  $('#evT').innerHTML = '<thead><tr><th>Estado</th><th class="ra">Esperado hoy (AP)</th><th class="ra">Vs. 2022</th><th class="ra">Ya votaron</th><th>Parte de lo esperado</th><th class="ra">Correo · persona</th><th>Registro: D · R · sin partido</th><th>Dato del</th></tr></thead><tbody>' +
+  $('#evT').innerHTML = '<thead><tr><th>Estado</th><th class="ra">Esperado hoy (AP)</th><th class="ra">Vs. 2022</th><th class="ra">Ya votaron</th><th>Parte de lo esperado</th><th class="ra">Correo · persona</th><th>Adelante (registro)</th><th>Registro: D · R · sin partido</th><th>Dato del</th></tr></thead><tbody>' +
     ss.map(function (s) {
       var reg = s.party ? '<div class="sv"><span class="dd">D ' + f1(100 * s.dem / s.voted) + '</span><span class="m">' + f1(100 * s.none / s.voted) + '</span><span class="rr">R ' + f1(100 * s.rep / s.voted) + '</span></div>' + split(s.dem, s.rep, s.none) : '<span class="m">el estado no lo publica</span>';
       var g = s.exp && s.turn22 ? s.exp / s.turn22 - 1 : null;
@@ -223,6 +271,7 @@ function renderEarly() {
         '<td data-l="Ya votaron" class="ra">' + (s.voted == null ? '<span class="m">sin dato</span>' : n0(s.voted)) + '</td>' +
         '<td data-l="Parte de lo esperado">' + (s.pct_exp == null ? '<span class="m">—</span>' : '<div class="sv"><span>' + pc(s.pct_exp) + '</span></div><div class="pbar2"><i style="width:' + Math.min(100, 100 * s.pct_exp) + '%"></i></div>') + '</td>' +
         '<td data-l="Correo · persona" class="ra m">' + (s.voted == null ? '—' : n0(s.mail) + ' · ' + n0(s.inperson)) + '</td>' +
+        '<td data-l="Adelante (registro)">' + (s.party && s.voted ? margin(100 * s.dem / s.voted, 100 * s.rep / s.voted) : '<span class="m">—</span>') + '</td>' +
         '<td data-l="Registro" class="full">' + (s.voted == null ? '<span class="m">—</span>' : reg) + '</td>' +
         '<td data-l="Dato del" class="m">' + esc(fecha(s.last)) + '</td></tr>';
     }).join('') + '</tbody>';
@@ -233,7 +282,7 @@ function renderEarly() {
 }
 
 function renderAll() {
-  renderForecasts(); renderGeneric(); renderRaces(); renderEarly();
+  renderForecasts(); renderFcRaces(); renderGeneric(); renderRaces(); renderEarly();
   $('#foot').innerHTML = 'Actualizado: ' + esc(P.updated) + '. Encuestas y pronósticos: cada fila enlaza a su fuente. ' +
     'Voto anticipado: UF Election Lab (CC BY-NC-ND 4.0). Proyección propia, no oficial. <a href="./">Volver al tablero en vivo</a>.';
 }
@@ -255,6 +304,13 @@ document.querySelectorAll('#raceOff button').forEach(function (b) {
     OFF = b.getAttribute('data-v');
     document.querySelectorAll('#raceOff button').forEach(function (x) { x.classList.toggle('on', x === b); });
     renderRaces();
+  });
+});
+document.querySelectorAll('#fcOff button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    FOFF = b.getAttribute('data-v');
+    document.querySelectorAll('#fcOff button').forEach(function (x) { x.classList.toggle('on', x === b); });
+    renderFcRaces();
   });
 });
 $('#evQ').addEventListener('input', function () { if (P) renderEarly(); });
